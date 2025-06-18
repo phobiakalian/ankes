@@ -664,11 +664,32 @@ HELP_PAGES = {
         ],
     },
     "privacy": {
-        "text": "**🔒 Kebijakan Privasi**\n\nBot ini tidak menyimpan data pribadi pengguna.\nHanya data konfigurasi grup yang disimpan.\n...",
+        "text": "**📜 Kebijakan Privasi**\n\n<blockquote>Kami menghargai privasi dan keamanan data Anda. Kebijakan Privasi ini menjelaskan bagaimana kami mengumpulkan, menggunakan, menyimpan, dan melindungi informasi pribadi pengguna saat menggunakan layanan kami.</blockquote>\n\n"
+                "**1. Informasi yang Kami Kumpulkan**\n<blockquote>"
+                "- ID pengguna Telegram atau data publik lainnya dari platform tempat layanan dijalankan.\n"
+                "- Data interaksi Anda dengan bot, seperti perintah yang digunakan dan preferensi pengaturan.\n"
+                "- Informasi tambahan yang diberikan secara sukarela, seperti saran atau masukan.</blockquote>\n\n"
+                "**2. Penggunaan Informasi**\n<blockquote>"
+                "- Menyediakan dan meningkatkan layanan.\n"
+                "- Personalisasi pengalaman pengguna.\n"
+                "- Memastikan keamanan dan pencegahan penyalahgunaan.</blockquote>\n\n"
+                "**3. Penyimpanan dan Keamanan**\n<blockquote>"
+                "- Data disimpan secara lokal atau di server yang aman.\n"
+                "- Kami mengambil langkah-langkah teknis dan organisasi yang wajar untuk melindungi data dari akses, perubahan, atau pengungkapan yang tidak sah.</blockquote>\n\n"
+                "**4. Pembagian Data**\n<blockquote>"
+                "- Kami tidak menjual, menyewakan, atau membagikan informasi pribadi Anda kepada pihak ketiga, kecuali jika diwajibkan oleh hukum.</blockquote>\n\n"
+                "**5. Hak Pengguna**\n<blockquote>"
+                "- Anda berhak meminta penghapusan data Anda.\n"
+                "- Anda dapat menghubungi kami untuk informasi lebih lanjut terkait data yang disimpan.</blockquote>\n\n"
+                "**6. Perubahan Kebijakan**\n<blockquote>"
+                "- Kami berhak memperbarui kebijakan privasi ini kapan saja.\n"
+                "- Perubahan akan diumumkan melalui saluran resmi atau langsung dalam layanan.</blockquote>\n\n"
+                "**7. Kontak**\n<blockquote>"
+                "Jika Anda memiliki pertanyaan mengenai kebijakan privasi ini, silakan hubungi admin kami:\n📩 Telegram: @phobiakalian</blockquote>",
         "buttons": [
             [("🔙 Kembali", "help_main")]
         ],
-    }
+    },
 }
 
 def make_keyboard(buttons):
