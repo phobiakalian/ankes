@@ -542,7 +542,7 @@ async def unauthorize_group(client: Client, msg: Message) -> None:
         await msg.reply("⚠️ Format chat_id tidak valid.")
 
 Start_text = """
-👋 Halo, {}!
+👋 Halo, {0}!
 
 🤖 <b>Bot Keamanan Grup</b> siap membantu mengelola grup Anda dengan sistem filter otomatis dan pengawasan konten yang ketat.
 
@@ -553,11 +553,11 @@ Gunakan perintah <code>/help</code> untuk melihat panduan lengkap penggunaan bot
 
 @bot.on_message(filters.command("start") & filters.private)
 async def cmd_start(client: Client, msg: Message):
-    await msg.reply(Start_text.join(msg.from_user.mention), reply_markup=InlineKeyboardMarkup([
+    await msg.reply(Start_text, reply_markup=InlineKeyboardMarkup([
         [InlineKeyboardButton("Add", url="")],
         [InlineKeyboardButton("Help&Commands", callback_data="help_main")]
     ])
-    )
+    ).join(msg.from_user.mention)
         
 
 
