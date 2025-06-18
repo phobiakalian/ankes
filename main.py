@@ -554,7 +554,7 @@ Gunakan perintah <code>/help</code> untuk melihat panduan lengkap penggunaan bot
 @bot.on_message(filters.command("start") & filters.private)
 async def cmd_start(client: Client, msg: Message):
     await msg.reply(Start_text.format(msg.from_user.mention), reply_markup=InlineKeyboardMarkup([
-        [InlineKeyboardButton("Add", url="")],
+        [InlineKeyboardButton("Add", url="t.me/phobiakalian")],
         [InlineKeyboardButton("Help&Commands", callback_data="help_main")]
     ])
     )
