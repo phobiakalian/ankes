@@ -562,12 +562,19 @@ async def cmd_start(client: Client, msg: Message):
 
 
 HELP_PAGES = {
+    "start": {
+        "text": Start_text,
+        "buttons": [
+            [("Help&Commands", "help_main")],
+        ],
+    },
     "main": {
         "text": "**🤖 Bantuan Bot**\nPilih kategori bantuan:",
         "buttons": [
             [("📌 Fitur Umum", "help_features")],
             [("🛡 Panduan Admin", "help_admin")],
             [("🔒 Kebijakan Privasi", "help_privacy")],
+            [("🔙 Kembali", "help_start")]
         ],
     },
     "features": {
@@ -716,7 +723,12 @@ async def help_callback(client: Client, callback_query: CallbackQuery):
         data = callback_query.data.replace("help_", "")
         page_key = data if data in HELP_PAGES else "main"
         page = HELP_PAGES[page_key]
-
+        if page_key == "start":
+            await callback_query.message.edit_text(
+                page["text"].format(callback_query.from_user.mention),
+                reply_markup=make_keyboard(page["buttons"])
+            )
+            return await callback_query.answer()
         await callback_query.message.edit_text(
             page["text"],
             reply_markup=make_keyboard(page["buttons"])
