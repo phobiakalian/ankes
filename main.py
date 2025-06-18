@@ -375,6 +375,10 @@ async def cmd_badwords(client: Client, msg: Message) -> None:
 
 @bot.on_callback_query()
 async def on_callback(client: Client, cb: CallbackQuery) -> None:
+    chat = cb.message.chat
+    if chat.type not in ("supergroup", "group"):
+        return
+    
     user_id = cb.from_user.id
     chat_id = cb.message.chat.id
 
