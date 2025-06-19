@@ -541,20 +541,20 @@ async def unauthorize_group(client: Client, msg: Message) -> None:
     except ValueError:
         await msg.reply("⚠️ Format chat_id tidak valid.")
 
-Start_text = """
-👋 Halo, {0}!
-
-🤖 <b>Bot Keamanan Grup</b> siap membantu mengelola grup Anda dengan sistem filter otomatis dan pengawasan konten yang ketat.
-
-Gunakan perintah <code>/help</code> untuk melihat panduan lengkap penggunaan bot.
-
-<b>Pastikan grup Anda telah mendapatkan izin resmi dari pengelola bot agar fitur berfungsi dengan sempurna.</b>
-"""
+Start_text = (
+            "👋 Halo, {0}!\n\n"
+            "Selamat datang di <b>YNA Security Bot</b> — asisten moderasi otomatis untuk menjaga keamanan dan ketertiban dalam grup Telegram Anda.\n\n"
+            "🔐 Bot ini dilengkapi dengan sistem filter, proteksi anti-bot, pemblokiran tautan, dan berbagai fitur lainnya yang dirancang untuk membantu admin dalam mengelola grup secara lebih efektif.\n\n"
+            "Untuk memulai, Anda bisa:\n"
+            "• Mengundang bot ke grup Anda\n"
+            "• Melihat daftar fitur dan panduan penggunaannya\n\n"
+            "Gunakan tombol di bawah ini untuk melanjutkan:"
+        )
 
 @bot.on_message(filters.command("start") & filters.private)
 async def cmd_start(client: Client, msg: Message):
     await msg.reply(Start_text.format(msg.from_user.mention), reply_markup=InlineKeyboardMarkup([
-        [InlineKeyboardButton("Add", url="t.me/phobiakalian")],
+        [InlineKeyboardButton("Add Me", url="https://t.me/ynankesbot?startgroup=true")],
         [InlineKeyboardButton("Help&Commands", callback_data="help_main")]
     ])
     )
@@ -563,84 +563,110 @@ async def cmd_start(client: Client, msg: Message):
 
 HELP_PAGES = {
     "start": {
-        "text": Start_text,
+        "text": (
+            "👋 Halo, {0}!\n\n"
+            "Selamat datang di <b>YNA Security Bot</b> — asisten moderasi otomatis untuk menjaga keamanan dan ketertiban dalam grup Telegram Anda.\n\n"
+            "🔐 Bot ini dilengkapi dengan sistem filter, proteksi anti-bot, pemblokiran tautan, dan berbagai fitur lainnya yang dirancang untuk membantu admin dalam mengelola grup secara lebih efektif.\n\n"
+            "Untuk memulai, Anda bisa:\n"
+            "• Mengundang bot ke grup Anda\n"
+            "• Melihat daftar fitur dan panduan penggunaannya\n\n"
+            "Gunakan tombol di bawah ini untuk melanjutkan:"
+        ),
         "buttons": [
-            [("Help&Commands", "help_main")],
+            [("➕ Tambahkan ke Grup", "url:https://t.me/ynankesbot?startgroup=true")],
+            [("📖 Bantuan & Perintah", "callback:help_main")],
         ],
     },
     "main": {
-        "text": "**🤖 Bantuan Bot**\nPilih kategori bantuan:",
+        "text": (
+            "**📚 Bantuan & Panduan Penggunaan Bot**\n\n"
+            "Silakan pilih salah satu kategori bantuan di bawah ini untuk mempelajari fitur yang tersedia serta cara menggunakannya:"
+        ),
         "buttons": [
-            [("📌 Fitur Umum", "help_features")],
-            [("🛡 Panduan Admin", "help_admin")],
-            [("🔒 Kebijakan Privasi", "help_privacy")],
-            [("🔙 Kembali", "help_start")]
+            [("📌 Fitur Umum", "callback:help_features")],
+            [("🛡 Panduan Admin", "callback:help_admin")],
+            [("🔒 Kebijakan Privasi", "callback:help_privacy")],
+            [("🔙 Kembali", "callback:help_start")],
         ],
-    },
+    },    
     "features": {
-        "text": "**📌 Fitur Umum**\n\n• Anti-link\n• Anti-bot\n• Filter kata kasar\n• Auto mute pengguna baru\n...",
+        "text": (
+            "**📌 Fitur Umum yang Tersedia**\n\n"
+            "Berikut adalah daftar fitur umum yang dapat diaktifkan di grup Anda untuk menjaga kenyamanan serta mengatur konten:\n\n"
+            "• <b>Anti-Link</b>: Blokir pesan yang mengandung tautan\n"
+            "• <b>Anti-Bot</b>: Cegah anggota menambahkan bot tanpa izin\n"
+            "• <b>Filter Kata Kasar</b>: Deteksi dan hapus kata-kata tidak pantas\n"
+            "• <b>Auto-Mute</b>: Otomatis bungkam anggota baru untuk waktu tertentu\n"
+            "• <b>Anti-Spam</b>: Deteksi pengiriman pesan beruntun\n"
+            "• <b>Notifikasi Join/Leave</b>: Menyembunyikan atau menampilkan pemberitahuan anggota keluar/masuk\n\n"
+            "Gunakan perintah <code>/settings</code> atau menu admin untuk menyesuaikan fitur-fitur ini."
+        ),
         "buttons": [
-            [("🔙 Kembali", "help_main")]
+            [("🔙 Kembali", "callback:help_main")]
         ],
     },
     "admin": {
-        "text": "**🛡 Panduan Admin**\n\n<blockquote>__Dalam upaya menjaga keamanan, kenyamanan, serta ketertiban dalam sebuah grup Telegram, bot ini dilengkapi dengan berbagai fitur moderasi yang berfungsi untuk mengontrol konten dan aktivitas anggota secara efektif. **Pilih tombol dibawah untuk mengenal fitur-fitur utama yang tersedia:**__</blockquote>",
+        "text": (
+            "**🛡 Panduan Admin Grup**\n\n"
+            "<blockquote>__Bot ini menyediakan berbagai fitur keamanan yang dapat membantu admin dalam menjaga ketertiban grup, memfilter konten yang tidak diinginkan, serta mencegah spam dan penyalahgunaan oleh anggota tidak bertanggung jawab.__</blockquote>\n\n"
+            "Berikut daftar fitur keamanan yang tersedia. Klik salah satu untuk melihat penjelasan dan cara penggunaannya secara detail:"
+        ),
         "buttons": [
-            [("Anti-Bot", "help_antibot"), ("Anti-Forward", "help_antiforward")],
-            [("Anti-Hashtags", "help_Nohashtags"), ("Anti-Flood", "help_Noflood")],
-            [("Anti-Commands", "help_Nocommands"), ("Anti-Voice", "help_Novoice")],
-            [("Blacklist", "help_Blacklist")],
-            [("Filter Locations", "help_Nolocations"),  ("Filter Links", "help_nolinks")],
-            [("Filters Events", "help_noevents"), ("Filters Image", "help_Noimage")],
-            [("🔙 Kembali", "help_main")]
+            [("🤖 Anti-Bot", "callback:help_antibot"), ("🔁 Anti-Forward", "callback:help_antiforward")],
+            [("🏷 Anti-Hashtags", "callback:help_Nohashtags"), ("💬 Anti-Flood", "callback:help_Noflood")],
+            [("⛔️ Anti-Commands", "callback:help_Nocommands"), ("🎙 Anti-Voice Note", "callback:help_Novoice")],
+            [("🚫 Blacklist", "callback:help_Blacklist")],
+            [("📍 Filter Lokasi", "callback:help_Nolocations"), ("🔗 Filter Tautan", "callback:help_nolinks")],
+            [("📅 Filter Event", "callback:help_noevents"), ("🖼 Filter Gambar", "callback:help_Noimage")],
+            [("🔙 Kembali", "callback:help_main")],
         ],
     },
     "antiforward": {
         "text": "**🛡 Anti Forward Message**\n\n<blockquote>__Fitur antiforward dirancang untuk mencegah anggota grup mengirimkan pesan yang diteruskan (forwarded messages) dari chat atau grup lain. Pesan yang diteruskan sering kali dapat mengandung informasi yang tidak relevan, spam, atau bahkan konten yang tidak sesuai dengan kebijakan grup. Dengan mengaktifkan fitur ini, bot akan secara otomatis menghapus pesan yang berupa forward dan, bila perlu, memberikan peringatan kepada pengirimnya. Ini membantu menjaga orisinalitas dan kualitas diskusi dalam grup serta mencegah penyebaran konten yang tidak diinginkan.__</blockquote>",
         "buttons": [
-            [("🔙 Kembali", "help_admin")]
+            [("🔙 Kembali", "callback:help_admin")]
         ],
     },
     "antibot": {
         "text": "**🛡 Anti Bot Add**\n\n<blockquote>__Fitur antibot mencegah anggota biasa menambahkan bot lain ke dalam grup tanpa izin admin. Hal ini sangat penting untuk mencegah masuknya bot spam, bot berbahaya, atau bot yang mengganggu aktivitas grup. Ketika fitur ini aktif, hanya admin yang memiliki hak khusus yang dapat menambahkan bot ke dalam grup.__</blockquote>",
         "buttons": [
-            [("🔙 Kembali", "help_admin")]
+            [("🔙 Kembali", "callback:help_admin")]
         ],
     },
     "nolinks": {
         "text": "**🛡 Filter Links**\n\n<blockquote>__Fitur nolinks secara aktif memindai setiap pesan yang dikirimkan anggota dan memblokir pesan yang mengandung tautan URL, baik berupa HTTP, HTTPS, tautan domain, maupun tautan Telegram (seperti t.me). Hal ini bertujuan untuk mengurangi risiko penyebaran spam, iklan, malware, atau link berbahaya lainnya yang dapat merugikan anggota grup. Dengan pengaturan ini, hanya pesan yang tidak mengandung tautan yang dapat dikirim, sehingga grup tetap terjaga dari konten berbahaya dan iklan yang tidak diinginkan.__</blockquote>",
         "buttons": [
-            [("🔙 Kembali", "help_admin")]
+            [("🔙 Kembali", "callback:help_admin")]
         ],
     },
     "noevents": {
         "text": "**🛡 Filtes Events**\n\n<blockquote>__Fitur noevents bertujuan untuk menonaktifkan atau menghalangi pesan yang berisi jenis-jenis event tertentu seperti undangan grup, stiker event, atau update acara yang tidak diinginkan. Ini membantu menjaga fokus diskusi di grup dan menghindari gangguan akibat pesan event yang tidak relevan.__</blockquote>",
         "buttons": [
-            [("🔙 Kembali", "help_admin")]
+            [("🔙 Kembali", "callback:help_admin")]
         ],
     },
     "Nolocations": {
         "text": "**🛡 Anti Location**\n\n<blockquote>__Dengan fitur nolocations aktif, pengiriman lokasi (geotag, live location) di dalam grup akan dicegah. Ini bermanfaat untuk menghindari penyebaran informasi lokasi pribadi yang bisa menimbulkan risiko keamanan.__</blockquote>",
         "buttons": [
-            [("🔙 Kembali", "help_admin")]
+            [("🔙 Kembali", "callback:help_admin")]
         ],
     },
     "Nocommands": {
         "text": "**🛡 Anti Commands**\n\n<blockquote>__Fitur ini mencegah anggota mengirimkan pesan yang berupa perintah (commands) bot tertentu secara tidak sengaja atau berlebihan, yang bisa mengganggu jalannya bot atau menyebabkan spam. Biasanya digunakan untuk membatasi command dari bot yang tidak diizinkan.__</blockquote>",
         "buttons": [
-            [("🔙 Kembali", "help_admin")]
+            [("🔙 Kembali", "callback:help_admin")]
         ],
     },
     "Nohashtags": {
         "text": "**🛡 Anti Hashtags**\n\n<blockquote>__Dengan fitur nohashtags, pesan yang berisi tanda pagar (#) atau hashtag akan diblokir. Ini menghindari penyalahgunaan hashtag untuk promosi atau spam yang tidak sesuai dengan aturan grup.__</blockquote>",
         "buttons": [
-            [("🔙 Kembali", "help_admin")]
+            [("🔙 Kembali", "callback:help_admin")]
         ],
     },
     "Noflood": {
         "text": "**🛡 Anti Flood**\n\n<blockquote>__Antiflood adalah mekanisme untuk mencegah spam berlebihan atau pengiriman pesan terlalu cepat secara berturut-turut oleh anggota. Jika seseorang mengirim pesan dalam jumlah besar dalam waktu singkat, bot akan memberikan peringatan atau mengeluarkan sementara dari grup untuk menjaga kenyamanan anggota lain.__</blockquote>",
         "buttons": [
-            [("🔙 Kembali", "help_admin")]
+            [("🔙 Kembali", "callback:help_admin")]
         ],
     },
     "Blacklist": {
@@ -659,19 +685,19 @@ HELP_PAGES = {
             "💡 Gunakan dengan bijak untuk menjaga kenyamanan grup."
         ),
         "buttons": [
-            [("🔙 Kembali", "help_admin")]
+            [("🔙 Kembali", "callback:help_admin")]
         ],
     },
     "Novoice": {
         "text": "**🛡 Anti Voice Note**\n\n<blockquote>__Fitur ini melarang pengiriman pesan suara atau voice notes dalam grup. Sangat cocok untuk grup yang mengutamakan komunikasi tertulis agar suasana diskusi tetap kondusif dan tidak berisik.__</blockquote>",
         "buttons": [
-            [("🔙 Kembali", "help_admin")]
+            [("🔙 Kembali", "callback:help_admin")]
         ],
     },
     "Noimage": {
         "text": "**🛡 Anti Image**\n\n<blockquote>__Fitur imagefilter bertujuan untuk memfilter atau memblokir pengiriman gambar, foto, atau media visual tertentu yang tidak sesuai aturan grup. Bisa juga dikonfigurasi untuk memblokir gambar berukuran besar, gambar dengan konten tidak pantas, atau gambar dari sumber yang tidak terpercaya.__</blockquote>",
         "buttons": [
-            [("🔙 Kembali", "help_admin")]
+            [("🔙 Kembali", "callback:help_admin")]
         ],
     },
     "privacy": {
@@ -698,16 +724,22 @@ HELP_PAGES = {
                 "**7. Kontak**\n<blockquote>"
                 "Jika Anda memiliki pertanyaan mengenai kebijakan privasi ini, silakan hubungi admin kami:\n📩 Telegram: @phobiakalian</blockquote>",
         "buttons": [
-            [("🔙 Kembali", "help_main")]
+            [("🔙 Kembali", "callback:help_main")]
         ],
     },
 }
 
 def make_keyboard(buttons):
-    return InlineKeyboardMarkup([
-        [InlineKeyboardButton(text, callback_data=cb) for text, cb in row]
-        for row in buttons
-    ])
+    keyboard = []
+    for row in buttons:
+        button_row = []
+        for text, action in row:
+            if action.startswith("callback:"):
+                button_row.append(InlineKeyboardButton(text, callback_data=action.replace("callback:", "", 1)))
+            elif action.startswith("url:"):
+                button_row.append(InlineKeyboardButton(text, url=action.replace("url:", "", 1)))
+        keyboard.append(button_row)
+    return InlineKeyboardMarkup(keyboard)
 
 
 @bot.on_message(filters.command("help"))
