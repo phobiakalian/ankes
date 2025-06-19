@@ -159,7 +159,7 @@ async def handle_violation(client: Client, msg: Message) -> None:
 
     try:
         if action_mode == "delete":
-            ok = await client.send_message(chat_id, f"{user.mention} Dilarang mengirim pesan seperti itu.")
+            ok = await client.send_message(chat_id, f"<blockquote><b>⚠️ Notifikasi Message\n{user.mention} Dilarang mengirim pesan seperti itu.</b></blockquote>")
             await msg.delete()
             await asyncio.sleep(3)
             await ok.delete()
@@ -554,8 +554,8 @@ Start_text = (
 @bot.on_message(filters.command("start") & filters.private)
 async def cmd_start(client: Client, msg: Message):
     await msg.reply(Start_text.format(msg.from_user.mention), reply_markup=InlineKeyboardMarkup([
-        [InlineKeyboardButton("Add Me", url="https://t.me/ynankesbot?startgroup=true")],
-        [InlineKeyboardButton("Help&Commands", callback_data="help_main")]
+        [InlineKeyboardButton("➕ Tambahkan ke Grup", url="https://t.me/ynankesbot?startgroup=true")],
+        [InlineKeyboardButton("📖 Bantuan & Perintah", callback_data="help_main")]
     ])
     )
         
