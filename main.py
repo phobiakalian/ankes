@@ -29,10 +29,11 @@ bot = Client(
 
 # Database
 db = YnDB("ankesDB.sqlite3", "groups")
-db_warnings = YnDB("ankesDB.sqlite3", "warnings")
-db_freeusers = YnDB("ankesDB.sqlite3", "freeusers")
-db_authorize = YnDB("ankesDB.sqlite3", "authorize")
-db_stats = YnDB("ankesDB.sqlite3", "stats")
+db_warnings = YnDB("ankeswarn.sqlite3", "warnings")
+db_freeusers = YnDB("ankesfree.sqlite3", "freeusers")
+db_authorize = YnDB("ankesauth.sqlite3", "authorize")
+db_stats = YnDB("ankesstats.sqlite3", "stats")
+db_users = YnDB("ankesusers.sqlite3", "users")
 
 # --stats--
 def add_violation_stat(chat_id: int, user_id: int, username: str):
@@ -732,11 +733,19 @@ Start_text = (
 
 @bot.on_message(filters.command("start") & filters.private)
 async def cmd_start(client: Client, msg: Message):
+    try:
+        if db_users.find({"user_id": msg.chat.id}):
+            pass
+        else:
+            db_users.insert_one({"user_id": msg.chat.id})
+    except:
+        pass
     await msg.reply(Start_text.format(msg.from_user.mention), reply_markup=InlineKeyboardMarkup([
         [InlineKeyboardButton("➕ Tambahkan ke Grup", url="https://t.me/ynankesbot?startgroup=true")],
         [InlineKeyboardButton("📖 Bantuan & Perintah", callback_data="help_main")]
     ])
-    )
+    ) 
+    return
         
 
 
