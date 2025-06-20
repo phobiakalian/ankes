@@ -385,7 +385,6 @@ async def on_message(client: Client, msg: Message) -> None:
     # TODO: Implement filters for imagefilter, antibot, antiflood, blacklist
 
 # --- /badwords command for admin ---
-
 @bot.on_message(filters.command("badwords") & filters.group)
 async def cmd_badwords(client: Client, msg: Message) -> None:
     user_id = msg.from_user.id
@@ -397,7 +396,7 @@ async def cmd_badwords(client: Client, msg: Message) -> None:
 
     parts = msg.text.split(maxsplit=2)
     if len(parts) < 2:
-        await msg.reply("Gunakan:\n/badwords add <kata>\n/badwords rem <kata>\n/badwords list")
+        await msg.reply("Gunakan:\n/badwords add <kata1> [kata2] [...]\n/badwords rem <kata1> [kata2] [...]\n/badwords list")
         return
 
     action = parts[1].lower()
@@ -406,7 +405,7 @@ async def cmd_badwords(client: Client, msg: Message) -> None:
 
     if action == "list":
         if badwords:
-            await msg.reply("📋 Daftar kata terlarang:\n" + "\n".join(f"- {w}" for w in badwords))
+            await msg.reply("📋 Daftar kata terlarang:\n\n<blockquote>" + "\n".join(f"- {w}" for w in badwords) + "</blockquote>")
         else:
             await msg.reply("📋 Tidak ada kata terlarang saat ini.")
         return
@@ -415,27 +414,39 @@ async def cmd_badwords(client: Client, msg: Message) -> None:
         await msg.reply("Masukkan kata yang ingin ditambahkan atau dihapus.")
         return
 
-    word = parts[2].strip().lower()
+    # Pecah kata per spasi, buang duplikat dengan set
+    words = list(set(parts[2].lower().replace(",", " ").split()))
+    if not words:
+        await msg.reply("❗ Tidak ada kata valid untuk diproses.")
+        return
 
     if action == "add":
-        if word in badwords:
-            await msg.reply(f"⚠️ Kata '{word}' sudah ada di daftar.")
+        added = []
+        for word in words:
+            if word not in badwords:
+                badwords.append(word)
+                added.append(word)
+        update_group_setting(chat_id, "badwords", badwords)
+        if added:
+            await msg.reply(f"✅ Kata berhasil ditambahkan:\n" + ", ".join(added))
         else:
-            badwords.append(word)
-            update_group_setting(chat_id, "badwords", badwords)
-            await msg.reply(f"✅ Kata '{word}' berhasil ditambahkan ke daftar kata terlarang.")
+            await msg.reply("⚠️ Tidak ada kata baru yang ditambahkan.")
         return
 
-    if action == "rem":
-        if word not in badwords:
-            await msg.reply(f"⚠️ Kata '{word}' tidak ditemukan di daftar.")
+    if action in ["rem", "remove", "del"]:
+        removed = []
+        for word in words:
+            if word in badwords:
+                badwords.remove(word)
+                removed.append(word)
+        update_group_setting(chat_id, "badwords", badwords)
+        if removed:
+            await msg.reply(f"✅ Kata berhasil dihapus:\n" + ", ".join(removed))
         else:
-            badwords.remove(word)
-            update_group_setting(chat_id, "badwords", badwords)
-            await msg.reply(f"✅ Kata '{word}' berhasil dihapus dari daftar kata terlarang.")
+            await msg.reply("⚠️ Tidak ada kata yang ditemukan dalam daftar.")
         return
 
-    await msg.reply("Gunakan action yang benar: add, rem, atau list.")
+    await msg.reply("Gunakan action yang benar: `add`, `rem`, atau `list`.")
 
 # --- Callback query handler ---
 
