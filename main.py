@@ -36,7 +36,7 @@ db_stats = YnDB("ankesDB.sqlite3", "stats")
 
 # --stats--
 def add_violation_stat(chat_id: int, user_id: int, username: str):
-    doc = db_stats.find_one({"chat_id": chat_id, "user_id": user_id})
+    doc = db_stats.find({"chat_id": chat_id, "user_id": user_id})
     if not doc:
         db_stats.insert_one({"chat_id": chat_id, "user_id": user_id, "username": username, "violations": 1, "messages": 0})
     else:
@@ -46,7 +46,7 @@ def add_violation_stat(chat_id: int, user_id: int, username: str):
         )
 
 def log_user_message(chat_id: int, user_id: int, username: str):
-    doc = db_stats.find_one({"chat_id": chat_id, "user_id": user_id})
+    doc = db_stats.find({"chat_id": chat_id, "user_id": user_id})
     if not doc:
         db_stats.insert_one({"chat_id": chat_id, "user_id": user_id, "username": username, "violations": 0, "messages": 1})
     else:
