@@ -100,6 +100,11 @@ async def is_admin(chat_id: int, user_id: int) -> bool:
     except Exception:
         return False
 
+# --- cek link --
+def contains_link(message) -> bool:
+    entities = (message.entities or []) + (message.caption_entities or [])
+    return any(ent.type in ("url", "text_link") for ent in entities)
+
 # --- UI: Settings keyboard ---
 
 def settings_keyboard(settings: Dict[str, Any]) -> InlineKeyboardMarkup:
@@ -165,7 +170,7 @@ async def handle_violation(client: Client, msg: Message) -> None:
             await ok.delete()
 
         elif action_mode == "mute":
-            oke = await client.send_message(chat_id, f"{user.mention} Dilarang mengirim pesan seperti itu.")
+            oke = await client.send_message(chat_id, f"<blockquote><b>⚠️ Notifikasi Message\n{user.mention} Dilarang mengirim pesan seperti itu.</b></blockquote>")
             await msg.delete()
             await asyncio.sleep(3)
             await oke.delete()
@@ -248,10 +253,10 @@ async def on_message(client: Client, msg: Message) -> None:
         await handle_violation(client, msg)
         return
 
-    if settings.get("nolinks", False):
-        if any(x in text for x in ["http://", "https://", "t.me", ".com"]):
-            await handle_violation(client, msg)
-            return
+    if settings.get("nolinks", False) and contains_link(msg):
+        #if any(x in text for x in ["http://", "https://", "t.me", ".com", "www"]):
+        await handle_violation(client, msg)
+        return
 
     if settings.get("noevents", False):
         if msg.new_chat_members or msg.left_chat_member:
@@ -453,6 +458,84 @@ async def on_callback(client: Client, cb: CallbackQuery) -> None:
     if data == "noop":
         await cb.answer()
         return
+
+
+# --- setting cmd -- 
+
+@bot.on_message(filters.command("set") & filters.group)
+async def cmd_set_feature(client: Client, msg: Message) -> None:
+    user_id = msg.from_user.id
+    chat_id = msg.chat.id
+
+    if not await is_admin(chat_id, user_id):
+        await msg.reply("⚠️ Hanya admin yang boleh mengatur pengaturan ini.")
+        return
+
+    parts = msg.text.strip().split()
+    if len(parts) != 3:
+        await msg.reply("🔧 Format salah.\nGunakan:\n`/set <fitur> <on/off>`", parse_mode="markdown")
+        return
+
+    _, feature, status = parts
+    feature = feature.lower()
+    status = status.lower()
+
+    valid_features = {
+        "antiforward", "nolinks", "noevents", "nocontacts",
+        "nolocations", "nocommands", "nohashtags", "novoice",
+        "imagefilter", "antibot", "antiflood", "blacklist"
+    }
+
+    if feature not in valid_features:
+        await msg.reply("❌ Fitur tidak dikenal. Coba fitur seperti: `antiflood`, `nolinks`, `antibot`, dst.", parse_mode="markdown")
+        return
+
+    if status not in {"on", "off"}:
+        await msg.reply("❌ Status harus 'on' atau 'off'. Contoh: `/set antiflood on`", parse_mode="markdown")
+        return
+
+    value = True if status == "on" else False
+    update_group_setting(chat_id, feature, value)
+
+    emoji = "✅" if value else "❌"
+    await msg.reply(f"{emoji} Fitur *{feature}* telah {'diaktifkan' if value else 'dinonaktifkan'}.", parse_mode="markdown")
+
+
+@bot.on_message(filters.command("get") & filters.group)
+async def cmd_get_feature(client: Client, msg: Message) -> None:
+    user_id = msg.from_user.id
+    chat_id = msg.chat.id
+
+    if not await is_admin(chat_id, user_id):
+        await msg.reply("⚠️ Hanya admin yang boleh melihat pengaturan ini.")
+        return
+
+    parts = msg.text.strip().split()
+    if len(parts) != 2:
+        await msg.reply("📋 Format salah.\nGunakan:\n`/get <fitur>`", parse_mode="markdown")
+        return
+
+    _, feature = parts
+    feature = feature.lower()
+
+    valid_features = {
+        "antiforward", "nolinks", "noevents", "nocontacts",
+        "nolocations", "nocommands", "nohashtags", "novoice",
+        "imagefilter", "antibot", "antiflood", "blacklist"
+    }
+
+    if feature not in valid_features:
+        await msg.reply("❌ Fitur tidak dikenal. Contoh: `antiflood`, `nolinks`, `antibot`, dll.", parse_mode="markdown")
+        return
+
+    settings = get_group_settings(chat_id)
+    value = settings.get(feature, False)
+
+    emoji = "✅ Aktif" if value else "❌ Nonaktif"
+    feature_label = feature.replace("no", "No ").replace("anti", "Anti ").replace("filter", "Filter")
+    feature_label = feature_label.replace("bot", "Bot").replace("links", "Links").title()
+
+    await msg.reply(f"ℹ️ Status *{feature_label}*: {emoji}", parse_mode="markdown")
 
 # --- /freeuser command ---
 
