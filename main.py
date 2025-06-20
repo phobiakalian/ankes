@@ -32,6 +32,29 @@ db = YnDB("ankesDB.sqlite3", "groups")
 db_warnings = YnDB("ankesDB.sqlite3", "warnings")
 db_freeusers = YnDB("ankesDB.sqlite3", "freeusers")
 db_authorize = YnDB("ankesDB.sqlite3", "authorize")
+db_stats = YnDB("ankesDB.sqlite3", "stats")
+
+# --stats--
+def add_violation_stat(chat_id: int, user_id: int, username: str):
+    doc = db_stats.find_one({"chat_id": chat_id, "user_id": user_id})
+    if not doc:
+        db_stats.insert_one({"chat_id": chat_id, "user_id": user_id, "username": username, "violations": 1, "messages": 0})
+    else:
+        db_stats.update_one(
+            {"chat_id": chat_id, "user_id": user_id},
+            {"$inc": {"violations": 1}, "$set": {"username": username}}
+        )
+
+def log_user_message(chat_id: int, user_id: int, username: str):
+    doc = db_stats.find_one({"chat_id": chat_id, "user_id": user_id})
+    if not doc:
+        db_stats.insert_one({"chat_id": chat_id, "user_id": user_id, "username": username, "violations": 0, "messages": 1})
+    else:
+        db_stats.update_one(
+            {"chat_id": chat_id, "user_id": user_id},
+            {"$inc": {"messages": 1}, "$set": {"username": username}}
+        )
+
 
 # --- Database helpers ---
 
@@ -199,6 +222,8 @@ async def handle_violation(client: Client, msg: Message) -> None:
             else:
                 await msg.reply(f"🚫 Anda melanggar aturan. Kesempatan {warning_count}/{max_warn}.")
 
+        add_violation_stat(chat_id, user_id, user.username or user.first_name)
+
     except Exception:
         # Jangan crash bot jika error
         pass
@@ -324,6 +349,9 @@ async def on_message(client: Client, msg: Message) -> None:
             user_message_timestamps[key].clear()
             user_message_ids[key].clear()
             return
+        
+    log_user_message(chat_id, user_id, user.username or user.first_name)
+
 
 
     # TODO: Implement filters for imagefilter, antibot, antiflood, blacklist
