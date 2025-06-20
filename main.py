@@ -473,7 +473,7 @@ async def cmd_set_feature(client: Client, msg: Message) -> None:
 
     parts = msg.text.strip().split()
     if len(parts) != 3:
-        await msg.reply("🔧 Format salah.\nGunakan:\n`/set <fitur> <on/off>`", parse_mode="MARKDOWN")
+        await msg.reply("🔧 Format salah.\nGunakan:\n`/set [fitur] [on/off]`")
         return
 
     _, feature, status = parts
