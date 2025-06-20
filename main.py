@@ -534,13 +534,50 @@ async def cmd_set_feature(client: Client, msg: Message) -> None:
 
     parts = msg.text.strip().split()
     if len(parts) != 3:
-        await msg.reply("🔧 Format salah.\nGunakan:\n`/set [fitur] [on/off]`")
+        await msg.reply(
+            "🔧 Format salah.\n"
+            "Gunakan:\n"
+            "`/set <fitur> <nilai>`\n\n"
+            "Contoh:\n"
+            "`/set action mute`\n"
+            "`/set maxwarning 5`\n"
+            "`/set antiflood on`",
+            quote=True
+        )
         return
 
-    _, feature, status = parts
+    _, feature, value = parts
     feature = feature.lower()
-    status = status.lower()
+    value = value.lower()
 
+    # --- Khusus action_mode ---
+    if feature == "action":
+        if value not in {"delete", "mute", "ban"}:
+            await msg.reply("❌ Nilai action hanya bisa: `delete`, `mute`, atau `ban`.")
+            return
+        update_group_setting(chat_id, "action_mode", value)
+        await msg.reply(f"✅ Mode tindakan diatur ke *{value}*.", quote=True)
+        return
+
+    # --- Khusus max_warnings ---
+    if feature == "maxwarning":
+        settings = get_group_settings(chat_id)
+        if settings.get("action_mode", "delete") == "delete":
+            await msg.reply("❌ Pengaturan *maxwarning* hanya berlaku saat action mode adalah *mute* atau *ban*.")
+            return
+
+        if not value.isdigit():
+            await msg.reply("❌ Harus berupa angka. Contoh: `/set maxwarning 5`")
+            return
+        num = int(value)
+        if not (1 <= num <= 10):
+            await msg.reply("❌ Nilai harus antara 1 sampai 10.")
+            return
+        update_group_setting(chat_id, "max_warnings", num)
+        await msg.reply(f"✅ Batas peringatan diatur menjadi *{num}*.", quote=True)
+        return
+
+    # --- Untuk fitur boolean umum ---
     valid_features = {
         "antiforward", "nolinks", "noevents", "nocontacts",
         "nolocations", "nocommands", "nohashtags", "novoice",
@@ -548,18 +585,16 @@ async def cmd_set_feature(client: Client, msg: Message) -> None:
     }
 
     if feature not in valid_features:
-        await msg.reply("❌ Fitur tidak dikenal. Coba fitur seperti: `antiflood`, `nolinks`, `antibot`, dst.")
+        await msg.reply("❌ Fitur tidak dikenal. Gunakan `/settings` untuk melihat fitur yang tersedia.")
         return
 
-    if status not in {"on", "off"}:
+    if value not in {"on", "off"}:
         await msg.reply("❌ Status harus 'on' atau 'off'. Contoh: `/set antiflood on`")
         return
 
-    value = True if status == "on" else False
-    update_group_setting(chat_id, feature, value)
-
-    emoji = "✅" if value else "❌"
-    await msg.reply(f"{emoji} Fitur *{feature}* telah {'diaktifkan' if value else 'dinonaktifkan'}.")
+    update_group_setting(chat_id, feature, value == "on")
+    emoji = "✅" if value == "on" else "❌"
+    await msg.reply(f"{emoji} Fitur *{feature}* telah {'diaktifkan' if value == 'on' else 'dinonaktifkan'}.", quote=True)
 
 
 @bot.on_message(filters.command("get") & filters.group)
