@@ -15,6 +15,7 @@ import time
 from collections import defaultdict
 
 user_message_timestamps = defaultdict(list)
+user_message_ids = defaultdict(list)
 from db import YnDB  # Asumsi ini sudah sesuai implementasinya
 
 API_TOKEN = "7579188265:AAEELB662s1GrCrqCjvgxYzEJWHfkEsJ3TI"
@@ -302,14 +303,6 @@ async def on_message(client: Client, msg: Message) -> None:
         return
 
     # --- Anti Flood ---
-    from collections import defaultdict
-    import time
-
-    # Simpan timestamp dan message_id
-    user_message_timestamps = defaultdict(list)
-    user_message_ids = defaultdict(list)
-
-    # Dalam handler
     if settings.get("antiflood", False):
         now = time.time()
         key = (chat_id, user_id)
