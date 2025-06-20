@@ -350,15 +350,17 @@ async def on_message(client: Client, msg: Message) -> None:
             user_message_timestamps[key].clear()
             user_message_ids[key].clear()
             add_violation_stat(chat_id, user_id, user.username or user.first_name)
-            warning_count = add_warning(chat_id, user_id)
-            max_warn = get_group_settings(chat_id).get("max_warnings", 3)
 
             oke = await client.send_message(chat_id, f"<blockquote><b>⚠️ Notifikasi Anti-Flood\n{user.mention} mengirim terlalu banyak pesan dalam waktu singkat.</b></blockquote>")
             await asyncio.sleep(3)
             await oke.delete()
-
+            action = get_group_settings(chat_id).get("action_mode", "delete")
+            if action == "delete":
+                return
+            
+            warning_count = add_warning(chat_id, user_id)
+            max_warn = get_group_settings(chat_id).get("max_warnings", 3)
             if warning_count >= max_warn:
-                action = get_group_settings(chat_id).get("action_mode", "delete")
                 if action == "mute":
                     await client.send_message(chat_id, f"{user.mention} dimute selama 10 menit karena spam.")
                     await bot.restrict_chat_member(
@@ -643,7 +645,7 @@ async def cmd_get_feature(client: Client, msg: Message) -> None:
     feature_label = feature.replace("no", "No ").replace("anti", "Anti ").replace("filter", "Filter")
     feature_label = feature_label.replace("bot", "Bot").replace("links", "Links").title()
 
-    await msg.reply(f"ℹ️ Status *{feature_label}*: {emoji}")
+    await msg.reply(f"ℹ️ Status **{feature_label}**: {emoji}")
 
 # --- /freeuser command ---
 
