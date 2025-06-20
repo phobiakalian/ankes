@@ -473,7 +473,7 @@ async def cmd_set_feature(client: Client, msg: Message) -> None:
 
     parts = msg.text.strip().split()
     if len(parts) != 3:
-        await msg.reply("🔧 Format salah.\nGunakan:\n`/set <fitur> <on/off>`", parse_mode="markdown")
+        await msg.reply("🔧 Format salah.\nGunakan:\n`/set <fitur> <on/off>`")
         return
 
     _, feature, status = parts
@@ -487,18 +487,18 @@ async def cmd_set_feature(client: Client, msg: Message) -> None:
     }
 
     if feature not in valid_features:
-        await msg.reply("❌ Fitur tidak dikenal. Coba fitur seperti: `antiflood`, `nolinks`, `antibot`, dst.", parse_mode="markdown")
+        await msg.reply("❌ Fitur tidak dikenal. Coba fitur seperti: `antiflood`, `nolinks`, `antibot`, dst.")
         return
 
     if status not in {"on", "off"}:
-        await msg.reply("❌ Status harus 'on' atau 'off'. Contoh: `/set antiflood on`", parse_mode="markdown")
+        await msg.reply("❌ Status harus 'on' atau 'off'. Contoh: `/set antiflood on`")
         return
 
     value = True if status == "on" else False
     update_group_setting(chat_id, feature, value)
 
     emoji = "✅" if value else "❌"
-    await msg.reply(f"{emoji} Fitur *{feature}* telah {'diaktifkan' if value else 'dinonaktifkan'}.", parse_mode="markdown")
+    await msg.reply(f"{emoji} Fitur *{feature}* telah {'diaktifkan' if value else 'dinonaktifkan'}.")
 
 
 @bot.on_message(filters.command("get") & filters.group)
@@ -512,7 +512,7 @@ async def cmd_get_feature(client: Client, msg: Message) -> None:
 
     parts = msg.text.strip().split()
     if len(parts) != 2:
-        await msg.reply("📋 Format salah.\nGunakan:\n`/get <fitur>`", parse_mode="markdown")
+        await msg.reply("📋 Format salah.\nGunakan:\n`/get <fitur>`")
         return
 
     _, feature = parts
@@ -525,7 +525,7 @@ async def cmd_get_feature(client: Client, msg: Message) -> None:
     }
 
     if feature not in valid_features:
-        await msg.reply("❌ Fitur tidak dikenal. Contoh: `antiflood`, `nolinks`, `antibot`, dll.", parse_mode="markdown")
+        await msg.reply("❌ Fitur tidak dikenal. Contoh: `antiflood`, `nolinks`, `antibot`, dll.")
         return
 
     settings = get_group_settings(chat_id)
@@ -535,7 +535,7 @@ async def cmd_get_feature(client: Client, msg: Message) -> None:
     feature_label = feature.replace("no", "No ").replace("anti", "Anti ").replace("filter", "Filter")
     feature_label = feature_label.replace("bot", "Bot").replace("links", "Links").title()
 
-    await msg.reply(f"ℹ️ Status *{feature_label}*: {emoji}", parse_mode="markdown")
+    await msg.reply(f"ℹ️ Status *{feature_label}*: {emoji}")
 
 # --- /freeuser command ---
 
