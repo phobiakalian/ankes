@@ -353,6 +353,7 @@ async def on_message(client: Client, msg: Message) -> None:
             await asyncio.sleep(3)
             await oke.delete()
             return
+        return
         
     log_user_message(chat_id, user_id, user.username or user.first_name)
 
