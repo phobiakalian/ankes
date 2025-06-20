@@ -441,14 +441,15 @@ async def cmd_badwords(client: Client, msg: Message) -> None:
 @bot.on_callback_query()
 async def on_callback(client: Client, cb: CallbackQuery) -> None:
     chat = cb.message.chat
-    if chat.type == "private":
-        return
     
     user_id = cb.from_user.id
     chat_id = cb.message.chat.id
 
     data = cb.data
     settings = get_group_settings(chat_id)
+    
+    if data.startswith("help_"):
+        return
 
     if not await is_admin(chat_id, user_id):
         await cb.answer("⚠️ Hanya admin yang bisa mengatur.")
