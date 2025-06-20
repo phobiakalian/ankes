@@ -357,7 +357,6 @@ async def on_message(client: Client, msg: Message) -> None:
             action = get_group_settings(chat_id).get("action_mode", "delete")
             if action == "delete":
                 return
-            
             warning_count = add_warning(chat_id, user_id)
             max_warn = get_group_settings(chat_id).get("max_warnings", 3)
             if warning_count >= max_warn:
