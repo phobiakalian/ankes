@@ -302,22 +302,34 @@ async def on_message(client: Client, msg: Message) -> None:
         return
 
     # --- Anti Flood ---
+    from collections import defaultdict
+    import time
+
+    # Simpan timestamp dan message_id
+    user_message_timestamps = defaultdict(list)
+    user_message_ids = defaultdict(list)
+
+    # Dalam handler
     if settings.get("antiflood", False):
         now = time.time()
-        user_message_timestamps[(chat_id, user_id)].append(now)
-        # Hapus timestamp yang lebih dari 60 detik lalu
-        user_message_timestamps[(chat_id, user_id)] = [
-            t for t in user_message_timestamps[(chat_id, user_id)] if now - t < 60
-        ]
+        key = (chat_id, user_id)
 
-        if len(user_message_timestamps[(chat_id, user_id)]) >= 5:
-            async for old_msg in client.get_chat_history(chat_id, limit=100):
-                if old_msg.from_user and old_msg.from_user.id == user_id:
-                    try:
-                        await old_msg.delete()
-                    except:
-                        pass
-            user_message_timestamps[(chat_id, user_id)].clear()
+        user_message_timestamps[key].append(now)
+        user_message_ids[key].append(msg.id)
+
+        # Buang timestamp lebih dari 60 detik
+        user_message_timestamps[key] = [t for t in user_message_timestamps[key] if now - t < 60]
+        user_message_ids[key] = user_message_ids[key][-5:]  # jaga-jaga, simpan maksimal 5 msg
+
+        if len(user_message_timestamps[key]) >= 5:
+            # Hapus semua pesan yang terdeteksi spam
+            for mid in user_message_ids[key]:
+                try:
+                    await client.delete_messages(chat_id, mid)
+                except:
+                    pass
+            user_message_timestamps[key].clear()
+            user_message_ids[key].clear()
             return
 
 
