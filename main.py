@@ -145,12 +145,12 @@ def settings_keyboard(settings: Dict[str, Any]) -> InlineKeyboardMarkup:
     ]
 
     keyboard = [
-        [on_off_button("antiforward", "Anti Forward"), on_off_button("nolinks", "Filter Links")],
-        [on_off_button("noevents", "Filter Join/Left"), on_off_button("nocontacts", "Filter Contacts")],
-        [on_off_button("nolocations", "Filter Locations"), on_off_button("nocommands", "Filter Commands")],
-        [on_off_button("nohashtags", "Filter Hashtags"), on_off_button("novoice", "Filter Voice")],
-        [on_off_button("blacklist", "Blacklist Domains"), on_off_button("antibot", "Anti Bot Add")],
-        [on_off_button("antiflood", "AntiFlood"), on_off_button("imagefilter", "Anti-Image")],
+        [on_off_button("antiforward", "antiforward"), on_off_button("nolinks", "nolinks")],
+        [on_off_button("noevents", "noevents"), on_off_button("nocontacts", "nocontacts")],
+        [on_off_button("nolocations", "nolocations"), on_off_button("nocommands", "nocommands")],
+        [on_off_button("nohashtags", "nohashtags"), on_off_button("novoice", "novoice")],
+        [on_off_button("blacklist", "blacklist"), on_off_button("antibot", "antibot")],
+        [on_off_button("antiflood", "antiflood"), on_off_button("imagefilter", "imagefilter")],
         mode_buttons,
     ]
 
@@ -447,7 +447,7 @@ async def on_callback(client: Client, cb: CallbackQuery) -> None:
 
     data = cb.data
     settings = get_group_settings(chat_id)
-    
+
     if data.startswith("help_"):
         return
 
