@@ -884,6 +884,38 @@ async def help_callback(client: Client, callback_query: CallbackQuery):
         await callback_query.answer()
 
 
+@bot.on_message(filters.command("stats") & filters.group)
+async def cmd_stats(client: Client, msg: Message):
+    chat_id = msg.chat.id
+    user_id = msg.from_user.id
+
+    if not await is_admin(chat_id, user_id):
+        await msg.reply("⚠️ Hanya admin yang boleh melihat statistik.")
+        return
+
+    members = await bot.get_chat_members_count(chat_id)
+    docs = db_stats.find({"chat_id": chat_id})
+
+    total_violations = 0
+    top_violator = ("-", 0)
+    top_chatter = ("-", 0)
+
+    for d in docs:
+        total_violations += d.get("violations", 0)
+        if d.get("violations", 0) > top_violator[1]:
+            top_violator = (d.get("username", "-"), d.get("violations", 0))
+        if d.get("messages", 0) > top_chatter[1]:
+            top_chatter = (d.get("username", "-"), d.get("messages", 0))
+
+    await msg.reply(f"""📊 <b>Statistik Grup</b>
+<blockquote>
+👥 Total Anggota: <code>{members}</code>
+⚠️ Total Pelanggaran: <code>{total_violations}</code>
+🔝 Pelanggar Terbanyak: <b>@{top_violator[0]}</b> (<code>{top_violator[1]}</code>x)
+💬 Member Teraktif: <b>@{top_chatter[0]}</b> (<code>{top_chatter[1]}</code> pesan) </blockquote>
+""", parse_mode="html")
+
+
 # --- Bot start ---
 if __name__ == "__main__":
     print("Bot started...")
