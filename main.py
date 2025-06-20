@@ -913,7 +913,7 @@ async def cmd_stats(client: Client, msg: Message):
 ⚠️ Total Pelanggaran: <code>{total_violations}</code>
 🔝 Pelanggar Terbanyak: <b>@{top_violator[0]}</b> (<code>{top_violator[1]}</code>x)
 💬 Member Teraktif: <b>@{top_chatter[0]}</b> (<code>{top_chatter[1]}</code> pesan) </blockquote>
-""", parse_mode="html")
+""")
 
 
 # --- Bot start ---
