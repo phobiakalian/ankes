@@ -344,6 +344,7 @@ async def on_message(client: Client, msg: Message) -> None:
             for mid in user_message_ids[key]:
                 try:
                     await client.delete_messages(chat_id, mid)
+                    add_violation_stat(chat_id, user_id, user.username or user.first_name)
                 except:
                     pass
             user_message_timestamps[key].clear()
