@@ -349,9 +349,31 @@ async def on_message(client: Client, msg: Message) -> None:
             user_message_timestamps[key].clear()
             user_message_ids[key].clear()
             add_violation_stat(chat_id, user_id, user.username or user.first_name)
+            warning_count = add_warning(chat_id, user_id)
+            max_warn = get_group_settings(chat_id).get("max_warnings", 3)
+
             oke = await client.send_message(chat_id, f"<blockquote><b>⚠️ Notifikasi Anti-Flood\n{user.mention} mengirim terlalu banyak pesan dalam waktu singkat.</b></blockquote>")
             await asyncio.sleep(3)
             await oke.delete()
+
+            if warning_count >= max_warn:
+                action = get_group_settings(chat_id).get("action_mode", "delete")
+                if action == "mute":
+                    await client.send_message(chat_id, f"{user.mention} dimute selama 10 menit karena spam.")
+                    await bot.restrict_chat_member(
+                        chat_id,
+                        user_id,
+                        permissions=ChatPermissions(can_send_messages=False),
+                        until_date=int(time.time()) + 600,
+                    )
+                elif action == "ban":
+                    await client.send_message(chat_id, f"{user.mention} diban karena spam.")
+                    await bot.ban_chat_member(chat_id, user_id)
+
+                reset_warnings(chat_id, user_id)
+            else:
+                await client.send_message(chat_id, f"🚫 {user.mention}, kamu melanggar batas flood. Warning {warning_count}/{max_warn}.")
+
             return
         return
         
@@ -419,7 +441,7 @@ async def cmd_badwords(client: Client, msg: Message) -> None:
 @bot.on_callback_query()
 async def on_callback(client: Client, cb: CallbackQuery) -> None:
     chat = cb.message.chat
-    if chat.type not in ("supergroup", "group"):
+    if chat.type == "private":
         return
     
     user_id = cb.from_user.id
