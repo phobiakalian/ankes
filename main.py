@@ -1,6 +1,6 @@
 import asyncio
 from typing import Optional, Dict, Any
-
+from datetime import datetime, timedelta
 from hydrogram import Client, filters
 from hydrogram.types import (
     Message,
@@ -371,7 +371,7 @@ async def on_message(client: Client, msg: Message) -> None:
                         chat_id,
                         user_id,
                         permissions=ChatPermissions(can_send_messages=False),
-                        until_date=int(time.time()) + 600,
+                        until_date=datetime.utcnow() + timedelta(seconds=3600), 
                     )
                 elif action == "ban":
                     await client.send_message(chat_id, f"<blockquote><b>{user.mention} dilarang dari grup karena melebihi batas spam yang diizinkan.</b>\n\n📌 Pelanggaran ini tercatat sebagai tindakan spam otomatis oleh sistem.</blockquote>")
