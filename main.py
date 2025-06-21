@@ -716,9 +716,7 @@ async def cmd_get_feature(client: Client, msg: Message) -> None:
 
     _, feature = parts
     feature = feature.lower()
-    feature_label = feature.replace("no", "No ").replace("anti", "Anti ").replace("filter", "Filter")
-    feature_label = feature_label.replace("bot", "Bot").replace("links", "Links").title()
-    if feature_label not in FEATURE_DESCRIPTIONS:
+    if feature not in FEATURE_DESCRIPTIONS:
         feature_list = "\n".join(
             [f"• <b>{name}</b>: {desc}" for name, desc in FEATURE_DESCRIPTIONS.items()]
         )
@@ -732,8 +730,6 @@ async def cmd_get_feature(client: Client, msg: Message) -> None:
             quote=True
         )
         return
-
-
     settings = get_group_settings(chat_id)
     value = settings.get(feature, False)
 
