@@ -711,7 +711,7 @@ async def cmd_get_feature(client: Client, msg: Message) -> None:
 
     parts = msg.text.strip().split()
     if len(parts) != 2:
-        await msg.reply("📋 Format salah.\nGunakan:\n`/get <fitur>`")
+        await msg.reply("📋 Format salah.\nGunakan:\n`/get &lt;fitur&gt;`")
         return
 
     _, feature = parts
