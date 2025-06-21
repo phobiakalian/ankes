@@ -27,7 +27,6 @@ bot = Client(
     api_id=6973446,
     bot_token=API_TOKEN
 )
-
 # Database
 db = YnDB("ankesDB.sqlite3", "groups")
 db_warnings = YnDB("ankeswarn.sqlite3", "warnings")
@@ -838,6 +837,92 @@ async def unauthorize_group(client: Client, msg: Message) -> None:
             await msg.reply("⚠️ Grup tidak ditemukan dalam daftar perizinan.")
     except ValueError:
         await msg.reply("⚠️ Format chat_id tidak valid.")
+
+
+# --- tagall --
+
+import random
+
+# List emoji bebas (bisa kamu ganti/ubah sesuka hati)
+EMOJI_LIST = [
+    "🙎🏿‍♀️", "🤤", "👨🏾‍🦯", "🥍", "💁🏽‍♀️", "🛎", "🫴🏿", "🧚‍♂️", "🧘🏽", "🧞‍♂️", 
+    "🫵🏽", "👁️", "👤", "🦶", "🧠", "👃", "👄", "🦷", "🦴", "🧍‍♀️", "🫂", "🙇‍♂️"
+]
+
+tagall_tasks = {}  # pastikan sudah ada di global scope
+
+@bot.on_message(filters.command("tagall") & filters.group)
+async def tagall_emoji_only(client: Client, msg: Message):
+    chat_id = msg.chat.id
+    user_id = msg.from_user.id
+
+    if not await is_admin(chat_id, user_id):
+        await msg.reply("❌ Hanya admin yang dapat menggunakan perintah ini.")
+        return
+
+    if chat_id in tagall_tasks and not tagall_tasks[chat_id].done():
+        await msg.reply("⚠️ Tagall sedang berlangsung. Gunakan /stoptagall untuk menghentikan.")
+        return
+
+    text_split = msg.text.split(None, 1)
+    additional_text = text_split[1] if len(text_split) > 1 else ""
+
+    async def run_tagall():
+        emojis = []
+        try:
+            async for member in client.get_chat_members(chat_id):
+                user = member.user
+                if user.is_bot:
+                    continue
+                emoji = random.choice(EMOJI_LIST)
+                emojis.append(emoji)
+        except Exception as e:
+            await msg.reply(f"❌ Gagal mengambil anggota grup: {e}")
+            return
+
+        if not emojis:
+            await msg.reply("❌ Tidak ada anggota yang bisa ditag.")
+            return
+
+        chunks = [emojis[i:i + 10] for i in range(0, len(emojis), 10)]
+
+        for chunk in chunks:
+            try:
+                content = f"{additional_text}\n\n" if additional_text else ""
+                content += " ".join(chunk)
+                await client.send_message(
+                    chat_id,
+                    content,
+                    reply_to_message_id=msg.id
+                )
+                await asyncio.sleep(1.5)
+            except asyncio.CancelledError:
+                await client.send_message(chat_id, "⛔ Tagall dihentikan.")
+                break
+            except Exception:
+                continue
+
+        tagall_tasks.pop(chat_id, None)
+
+    task = asyncio.create_task(run_tagall())
+    tagall_tasks[chat_id] = task
+
+@bot.on_message(filters.command("stoptagall") & filters.group)
+async def cmd_stoptagall(client: Client, msg: Message):
+    chat_id = msg.chat.id
+    user_id = msg.from_user.id
+
+    if not await is_admin(chat_id, user_id):
+        await msg.reply("⚠️ Hanya admin yang bisa menghentikan tagall.")
+        return
+
+    task = tagall_tasks.get(chat_id)
+    if task and not task.done():
+        task.cancel()
+        await msg.reply("✅ Proses tagall dihentikan.")
+    else:
+        await msg.reply("ℹ️ Tidak ada proses tagall yang sedang berlangsung.")
+
 
 Start_text = (
             "👋 Halo, {0}!\n\n"
