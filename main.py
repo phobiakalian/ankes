@@ -362,7 +362,11 @@ async def on_message(client: Client, msg: Message) -> None:
             max_warn = get_group_settings(chat_id).get("max_warnings", 3)
             if warning_count >= max_warn:
                 if action == "mute":
-                    await client.send_message(chat_id, f"{user.mention} dimute selama 10 menit karena spam.")
+                    await client.send_message(
+                        chat_id,
+                        f"<blockquote>🔇 {user.mention} telah dimute selama 10 menit karena mengirim pesan secara berlebihan (spam).</blockquote>"
+                    )
+
                     await bot.restrict_chat_member(
                         chat_id,
                         user_id,
@@ -370,13 +374,16 @@ async def on_message(client: Client, msg: Message) -> None:
                         until_date=int(time.time()) + 600,
                     )
                 elif action == "ban":
-                    await client.send_message(chat_id, f"{user.mention} diban karena spam.")
+                    await client.send_message(chat_id, f"<blockquote><b>{user.mention} dilarang dari grup karena melebihi batas spam yang diizinkan.</b>\n\n📌 Pelanggaran ini tercatat sebagai tindakan spam otomatis oleh sistem.</blockquote>")
                     await bot.ban_chat_member(chat_id, user_id)
 
                 reset_warnings(chat_id, user_id)
             else:
-                await client.send_message(chat_id, f"🚫 {user.mention}, kamu melanggar batas flood. Warning {warning_count}/{max_warn}.")
-
+                await client.send_message(
+                    chat_id,
+                    f"<blockquote>🚫 {user.mention}, kamu telah melanggar batas pengiriman pesan dalam waktu singkat (flooding).\n"
+                    f"Peringatan: {warning_count} dari {max_warn}.</blockquote>"
+                )
             return
         return
 
@@ -391,7 +398,7 @@ async def cmd_badwords(client: Client, msg: Message) -> None:
     chat_id = msg.chat.id
 
     if not await is_admin(chat_id, user_id):
-        await msg.reply("⚠️ Hanya admin yang boleh mengatur kata terlarang.")
+        await msg.reply("<blockquote>⚠️ Hanya admin yang boleh mengatur kata terlarang.</blockquote>")
         return
 
     parts = msg.text.split(maxsplit=2)
@@ -542,7 +549,7 @@ async def cmd_stats(client: Client, msg: Message):
     user_id = msg.from_user.id
 
     if not await is_admin(chat_id, user_id):
-        await msg.reply("⚠️ Hanya admin yang boleh melihat statistik.")
+        await msg.reply("<blockquote>🚫 Akses ditolak.\nHanya admin yang dapat menggunakan perintah ini.</blockquote>")
         return
 
     members = await bot.get_chat_members_count(chat_id)
@@ -563,29 +570,46 @@ async def cmd_stats(client: Client, msg: Message):
 <blockquote>
 👥 Total Anggota: <code>{members}</code>
 ⚠️ Total Pelanggaran: <code>{total_violations}</code>
-🔝 Pelanggar Terbanyak: <b>@{top_violator[0]}</b> (<code>{top_violator[1]}</code>x)
-💬 Member Teraktif: <b>@{top_chatter[0]}</b> (<code>{top_chatter[1]}</code> pesan) </blockquote>
+🔝 Pelanggar Terbanyak: <b>{top_violator[0]}</b> (<code>{top_violator[1]}</code>x)
+💬 Member Teraktif: <b>{top_chatter[0]}</b> (<code>{top_chatter[1]}</code> pesan) </blockquote>
 """)
-
+    
 @bot.on_message(filters.command("set") & filters.group)
 async def cmd_set_feature(client: Client, msg: Message) -> None:
     user_id = msg.from_user.id
     chat_id = msg.chat.id
 
     if not await is_admin(chat_id, user_id):
-        await msg.reply("⚠️ Hanya admin yang boleh mengatur pengaturan ini.")
+        await msg.reply("<blockquote>🚫 Akses ditolak.\nHanya admin yang dapat menggunakan perintah ini.</blockquote>")
         return
 
     parts = msg.text.strip().split()
     if len(parts) != 3:
         await msg.reply(
-            "🔧 Format salah.\n"
-            "Gunakan:\n"
-            "`/set <fitur> <nilai>`\n\n"
-            "Contoh:\n"
-            "`/set action mute`\n"
-            "`/set maxwarning 5`\n"
-            "`/set antiflood on`",
+            "<b>🔧 Format Salah!</b>\n\n"
+            "<blockquote>"
+            "Gunakan format:\n"
+            "<code>/set &lt;fitur&gt; &lt;nilai&gt;</code>\n\n"
+            "<b>Contoh:</b>\n"
+            "<code>/set action mute</code>\n"
+            "<code>/set maxwarning 5</code>\n"
+            "<code>/set antiflood on</code>\n\n"
+            "<b>Daftar Fitur:</b>\n"
+            "• action: <i>delete | mute | ban</i>\n"
+            "• maxwarning: <i>1 - 10</i> (khusus untuk <code>mute</code> / <code>ban</code>)\n"
+            "• antiforward: <i>on/off</i>\n"
+            "• nolinks: <i>on/off</i>\n"
+            "• noevents: <i>on/off</i>\n"
+            "• nocontacts: <i>on/off</i>\n"
+            "• nolocations: <i>on/off</i>\n"
+            "• nocommands: <i>on/off</i>\n"
+            "• nohashtags: <i>on/off</i>\n"
+            "• novoice: <i>on/off</i>\n"
+            "• imagefilter: <i>on/off</i>\n"
+            "• antibot: <i>on/off</i>\n"
+            "• antiflood: <i>on/off</i>\n"
+            "• blacklist: <i>on/off</i>"
+            "</blockquote>",
             quote=True
         )
         return
@@ -594,34 +618,40 @@ async def cmd_set_feature(client: Client, msg: Message) -> None:
     feature = feature.lower()
     value = value.lower()
 
-    # --- Khusus action_mode ---
     if feature == "action":
         if value not in {"delete", "mute", "ban"}:
-            await msg.reply("❌ Nilai action hanya bisa: `delete`, `mute`, atau `ban`.")
+            await msg.reply(
+                "<blockquote>❌ Nilai <b>action</b> tidak valid.\n"
+                "Hanya bisa menggunakan:\n"
+                "• <code>delete</code>\n"
+                "• <code>mute</code>\n"
+                "• <code>ban</code></blockquote>"
+            )
             return
         update_group_setting(chat_id, "action_mode", value)
-        await msg.reply(f"✅ Mode tindakan diatur ke *{value}*.", quote=True)
+        await msg.reply(
+            f"<blockquote>✅ Mode tindakan berhasil diatur ke <b>{value}</b>.</blockquote>",
+            quote=True
+        )
         return
 
-    # --- Khusus max_warnings ---
     if feature == "maxwarning":
         settings = get_group_settings(chat_id)
         if settings.get("action_mode", "delete") == "delete":
-            await msg.reply("❌ Pengaturan *maxwarning* hanya berlaku saat action mode adalah *mute* atau *ban*.")
+            await msg.reply("❌ <b>maxwarning</b> hanya berlaku jika <b>action</b> adalah <code>mute</code> atau <code>ban</code>.")
             return
 
         if not value.isdigit():
-            await msg.reply("❌ Harus berupa angka. Contoh: `/set maxwarning 5`")
+            await msg.reply("❌ Nilai harus berupa angka. Contoh: <code>/set maxwarning 5</code>")
             return
         num = int(value)
         if not (1 <= num <= 10):
-            await msg.reply("❌ Nilai harus antara 1 sampai 10.")
+            await msg.reply("❌ Nilai harus antara <code>1</code> sampai <code>10</code>.")
             return
         update_group_setting(chat_id, "max_warnings", num)
-        await msg.reply(f"✅ Batas peringatan diatur menjadi *{num}*.", quote=True)
+        await msg.reply(f"✅ Batas peringatan diatur menjadi <b>{num}</b>.", quote=True)
         return
 
-    # --- Untuk fitur boolean umum ---
     valid_features = {
         "antiforward", "nolinks", "noevents", "nocontacts",
         "nolocations", "nocommands", "nohashtags", "novoice",
@@ -629,16 +659,45 @@ async def cmd_set_feature(client: Client, msg: Message) -> None:
     }
 
     if feature not in valid_features:
-        await msg.reply("❌ Fitur tidak dikenal. Gunakan `/settings` untuk melihat fitur yang tersedia.")
+        fitur_list = "\n".join(f"• <code>{f}</code>" for f in sorted(valid_features))
+        await msg.reply(
+            "<blockquote>❌ Fitur tidak dikenal.\n\n"
+            "Berikut fitur yang tersedia:\n"
+            f"{fitur_list}</blockquote>",
+            quote=True
+        )
         return
 
     if value not in {"on", "off"}:
-        await msg.reply("❌ Status harus 'on' atau 'off'. Contoh: `/set antiflood on`")
+        await msg.reply(
+            "<blockquote>❌ Nilai hanya bisa <code>on</code> atau <code>off</code>.\n"
+            "Contoh: <code>/set antibot on</code></blockquote>",
+            quote=True
+        )
         return
 
     update_group_setting(chat_id, feature, value == "on")
     emoji = "✅" if value == "on" else "❌"
-    await msg.reply(f"{emoji} Fitur *{feature}* telah {'diaktifkan' if value == 'on' else 'dinonaktifkan'}.", quote=True)
+    status = "diaktifkan" if value == "on" else "dinonaktifkan"
+    await msg.reply(
+        f"<blockquote>{emoji} Fitur <b>{feature}</b> telah {status}.</blockquote>",
+        quote=True
+    )
+
+FEATURE_DESCRIPTIONS = {
+    "antiforward": "🔒 Blokir pesan yang diteruskan (forwarded) dari chat lain untuk mencegah spam dan promosi terselubung.",
+    "nolinks": "🔗 Cegah pengguna mengirim tautan atau link (termasuk http/https) dalam pesan.",
+    "noevents": "📅 Nonaktifkan pengiriman pesan berupa event seperti jadwal atau pengingat otomatis.",
+    "nocontacts": "👤 Blokir pengiriman kontak oleh anggota, mencegah promosi nomor telepon.",
+    "nolocations": "📍 Blokir pengiriman lokasi (location) untuk mencegah spam atau informasi lokasi yang tidak perlu.",
+    "nocommands": "⌨️ Blokir penggunaan perintah bot oleh anggota non-admin.",
+    "nohashtags": "#️⃣ Nonaktifkan penggunaan hashtag di grup untuk menjaga fokus pembicaraan.",
+    "novoice": "🎙 Blokir pengiriman pesan suara (voice message), cocok untuk grup diskusi serius.",
+    "imagefilter": "🖼 Blokir gambar (photo) agar tidak ada konten visual yang tidak relevan masuk.",
+    "antibot": "🤖 Otomatis keluarkan bot yang masuk selain yang ada dalam whitelist admin.",
+    "antiflood": "🌊 Batasi jumlah pesan yang dikirim dalam waktu singkat untuk mencegah spam massal.",
+    "blacklist": "🚫 Blokir pesan yang mengandung kata-kata yang termasuk dalam daftar hitam (blacklist)."
+}
 
 
 @bot.on_message(filters.command("get") & filters.group)
@@ -657,16 +716,23 @@ async def cmd_get_feature(client: Client, msg: Message) -> None:
 
     _, feature = parts
     feature = feature.lower()
-
-    valid_features = {
-        "antiforward", "nolinks", "noevents", "nocontacts",
-        "nolocations", "nocommands", "nohashtags", "novoice",
-        "imagefilter", "antibot", "antiflood", "blacklist"
-    }
-
-    if feature not in valid_features:
-        await msg.reply("❌ Fitur tidak dikenal. Contoh: `antiflood`, `nolinks`, `antibot`, dll.")
+    feature_label = feature.replace("no", "No ").replace("anti", "Anti ").replace("filter", "Filter")
+    feature_label = feature_label.replace("bot", "Bot").replace("links", "Links").title()
+    if feature_label not in FEATURE_DESCRIPTIONS:
+        feature_list = "\n".join(
+            [f"• <b>{name}</b>: {desc}" for name, desc in FEATURE_DESCRIPTIONS.items()]
+        )
+        await msg.reply(
+            "<b>❌ Fitur tidak dikenal.</b>\n\n"
+            "<b>Berikut daftar fitur yang tersedia:</b>\n"
+            f"<blockquote>{feature_list}</blockquote>\n\n"
+            "Gunakan perintah:\n"
+            "<code>/get &lt;fitur&gt;</code> untuk melihat status\n"
+            "<code>/set &lt;fitur&gt; on/off</code> untuk mengubahnya.",
+            quote=True
+        )
         return
+
 
     settings = get_group_settings(chat_id)
     value = settings.get(feature, False)
@@ -674,8 +740,11 @@ async def cmd_get_feature(client: Client, msg: Message) -> None:
     emoji = "✅ Aktif" if value else "❌ Nonaktif"
     feature_label = feature.replace("no", "No ").replace("anti", "Anti ").replace("filter", "Filter")
     feature_label = feature_label.replace("bot", "Bot").replace("links", "Links").title()
-
-    await msg.reply(f"ℹ️ Status **{feature_label}**: {emoji}")
+    desc = FEATURE_DESCRIPTIONS.get(feature_label, "Tidak ada deskripsi tersedia.")
+    await msg.reply(
+        f"<b>ℹ️ Status Fitur</b>\n"
+        f"<blockquote>{feature_label}: {emoji}\n\n{desc}</blockquote>"
+    )
 
 # --- /freeuser command ---
 
