@@ -734,12 +734,10 @@ async def cmd_get_feature(client: Client, msg: Message) -> None:
     value = settings.get(feature, False)
 
     emoji = "✅ Aktif" if value else "❌ Nonaktif"
-    feature_label = feature.replace("no", "No ").replace("anti", "Anti ").replace("filter", "Filter")
-    feature_label = feature_label.replace("bot", "Bot").replace("links", "Links").title()
-    desc = FEATURE_DESCRIPTIONS.get(feature_label, "Tidak ada deskripsi tersedia.")
+    desc = FEATURE_DESCRIPTIONS.get(feature, "Tidak ada deskripsi tersedia.")
     await msg.reply(
         f"<b>ℹ️ Status Fitur</b>\n"
-        f"<blockquote>{feature_label}: {emoji}\n\n{desc}</blockquote>"
+        f"<blockquote>{feature}: {emoji}\n\n{desc}</blockquote>"
     )
 
 # --- /freeuser command ---
