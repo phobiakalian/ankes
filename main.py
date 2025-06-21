@@ -223,7 +223,7 @@ async def handle_violation(client: Client, msg: Message) -> None:
             else:
                 await msg.reply(f"🚫 Anda melanggar aturan. Kesempatan {warning_count}/{max_warn}.")
 
-        add_violation_stat(chat_id, user_id, user.username or user.first_name)
+        add_violation_stat(chat_id, user_id, user.mention)
 
     except Exception:
         # Jangan crash bot jika error
@@ -250,6 +250,7 @@ async def on_message(client: Client, msg: Message) -> None:
     chat_id = msg.chat.id
     user = msg.from_user
     user_id = user.id if user else None
+    log_user_message(chat_id, user_id, user.mention)
 
 #    authorized = db_authorize.find({"chat_id": chat_id})
 
@@ -349,7 +350,7 @@ async def on_message(client: Client, msg: Message) -> None:
                     pass
             user_message_timestamps[key].clear()
             user_message_ids[key].clear()
-            add_violation_stat(chat_id, user_id, user.username or user.first_name)
+            add_violation_stat(chat_id, user_id, user.mention)
 
             oke = await client.send_message(chat_id, f"<blockquote><b>⚠️ Notifikasi Anti-Flood\n{user.mention} mengirim terlalu banyak pesan dalam waktu singkat.</b></blockquote>")
             await asyncio.sleep(3)
@@ -378,8 +379,6 @@ async def on_message(client: Client, msg: Message) -> None:
 
             return
         return
-        
-    log_user_message(chat_id, user_id, user.username or user.first_name)
 
 
 
@@ -535,6 +534,38 @@ async def on_callback(client: Client, cb: CallbackQuery) -> None:
 
 
 # --- setting cmd -- 
+
+
+@bot.on_message(filters.command("stats") & filters.group)
+async def cmd_stats(client: Client, msg: Message):
+    chat_id = msg.chat.id
+    user_id = msg.from_user.id
+
+    if not await is_admin(chat_id, user_id):
+        await msg.reply("⚠️ Hanya admin yang boleh melihat statistik.")
+        return
+
+    members = await bot.get_chat_members_count(chat_id)
+    docs = db_stats.find({"chat_id": chat_id})
+
+    total_violations = 0
+    top_violator = ("-", 0)
+    top_chatter = ("-", 0)
+
+    for d in docs:
+        total_violations += d.get("violations", 0)
+        if d.get("violations", 0) > top_violator[1]:
+            top_violator = (d.get("username", "-"), d.get("violations", 0))
+        if d.get("messages", 0) > top_chatter[1]:
+            top_chatter = (d.get("username", "-"), d.get("messages", 0))
+
+    await msg.reply(f"""📊 <b>Statistik Grup</b>
+<blockquote>
+👥 Total Anggota: <code>{members}</code>
+⚠️ Total Pelanggaran: <code>{total_violations}</code>
+🔝 Pelanggar Terbanyak: <b>@{top_violator[0]}</b> (<code>{top_violator[1]}</code>x)
+💬 Member Teraktif: <b>@{top_chatter[0]}</b> (<code>{top_chatter[1]}</code> pesan) </blockquote>
+""")
 
 @bot.on_message(filters.command("set") & filters.group)
 async def cmd_set_feature(client: Client, msg: Message) -> None:
@@ -966,38 +997,6 @@ async def help_callback(client: Client, callback_query: CallbackQuery):
             reply_markup=make_keyboard(page["buttons"])
         )
         await callback_query.answer()
-
-
-@bot.on_message(filters.command("stats") & filters.group)
-async def cmd_stats(client: Client, msg: Message):
-    chat_id = msg.chat.id
-    user_id = msg.from_user.id
-
-    if not await is_admin(chat_id, user_id):
-        await msg.reply("⚠️ Hanya admin yang boleh melihat statistik.")
-        return
-
-    members = await bot.get_chat_members_count(chat_id)
-    docs = db_stats.find({"chat_id": chat_id})
-
-    total_violations = 0
-    top_violator = ("-", 0)
-    top_chatter = ("-", 0)
-
-    for d in docs:
-        total_violations += d.get("violations", 0)
-        if d.get("violations", 0) > top_violator[1]:
-            top_violator = (d.get("username", "-"), d.get("violations", 0))
-        if d.get("messages", 0) > top_chatter[1]:
-            top_chatter = (d.get("username", "-"), d.get("messages", 0))
-
-    await msg.reply(f"""📊 <b>Statistik Grup</b>
-<blockquote>
-👥 Total Anggota: <code>{members}</code>
-⚠️ Total Pelanggaran: <code>{total_violations}</code>
-🔝 Pelanggar Terbanyak: <b>@{top_violator[0]}</b> (<code>{top_violator[1]}</code>x)
-💬 Member Teraktif: <b>@{top_chatter[0]}</b> (<code>{top_chatter[1]}</code> pesan) </blockquote>
-""")
 
 
 # --- Bot start ---
