@@ -1,6 +1,9 @@
-import asyncio
+import asyncio, random, time
 from typing import Optional, Dict, Any
 from datetime import datetime, timedelta
+from collections import defaultdict
+from difflib import get_close_matches
+
 from hydrogram import Client, filters
 from hydrogram.types import (
     Message,
@@ -11,13 +14,14 @@ from hydrogram.types import (
 )
 from hydrogram.enums import ChatMemberStatus
 from hydrogram.errors.exceptions.bad_request_400 import MessageNotModified
-import time
-from collections import defaultdict
-from difflib import get_close_matches
+
+from db import YnDB 
+
+EMOJI_LIST = ["🙎🏿‍♀️", "🤤", "👨🏾‍🦯", "🥍", "💁🏽‍♀️", "🛎", "🫴🏿", "🧞", "🫅", "🦸", "🧙", "🧝", "🧛", "🧟"]
+tagall_tasks = {}
 
 user_message_timestamps = defaultdict(list)
 user_message_ids = defaultdict(list)
-from db import YnDB  # Asumsi ini sudah sesuai implementasinya
 
 API_TOKEN = "7579188265:AAEELB662s1GrCrqCjvgxYzEJWHfkEsJ3TI"
 
@@ -371,7 +375,7 @@ async def on_message(client: Client, msg: Message) -> None:
                         chat_id,
                         user_id,
                         permissions=ChatPermissions(can_send_messages=False),
-                        until_date=datetime.utcnow() + timedelta(seconds=3600), 
+                        until_date=datetime.utcnow() + timedelta(seconds=600), 
                     )
                 elif action == "ban":
                     await client.send_message(chat_id, f"<blockquote><b>{user.mention} dilarang dari grup karena melebihi batas spam yang diizinkan.</b>\n\n📌 Pelanggaran ini tercatat sebagai tindakan spam otomatis oleh sistem.</blockquote>")
@@ -577,6 +581,7 @@ async def cmd_stats(client: Client, msg: Message):
 def get_closest_feature_name(input_name: str, valid_features: set) -> str | None:
     matches = get_close_matches(input_name, valid_features, n=1, cutoff=0.6)
     return matches[0] if matches else None
+
 @bot.on_message(filters.command("set") & filters.group)
 async def cmd_set_feature(client: Client, msg: Message) -> None:
     user_id = msg.from_user.id
@@ -754,46 +759,120 @@ async def cmd_get_feature(client: Client, msg: Message) -> None:
 # --- /freeuser command ---
 
 @bot.on_message(filters.command("freeuser") & filters.group)
-async def cmd_freeuser(client: Client, msg: Message) -> None:
+async def cmd_add_freeuser(client: Client, msg: Message):
     user_id = msg.from_user.id
     chat_id = msg.chat.id
 
     if not await is_admin(chat_id, user_id):
-        await msg.reply("⚠️ Hanya admin yang bisa mengatur free user.")
-        return
+        return await msg.reply("⚠️ Hanya admin yang bisa menambahkan free user.")
 
-    parts = msg.text.split()
-    if len(parts) < 2:
-        await msg.reply("Gunakan:\n/reply ke pesan atau /freeuser add @username\n/freeuser remove @username")
-        return
-
-    action = parts[1].lower()
-
-    # Coba ambil target user dari reply
     target_user = None
     if msg.reply_to_message:
         target_user = msg.reply_to_message.from_user
-    elif len(parts) >= 3:
+    elif len(msg.command) >= 2:
         try:
-            target_user = await client.get_users(parts[2])
+            target_user = await client.get_users(msg.command[1])
         except Exception:
-            await msg.reply("⚠️ Username atau user ID tidak valid.")
-            return
+            return await msg.reply("⚠️ Username atau user ID tidak valid.")
     else:
-        await msg.reply("⚠️ Kamu harus membalas pesan pengguna atau memberikan @username/user_id.")
-        return
+        return await msg.reply("⚠️ Balas pesan pengguna atau beri username/user_id.")
 
-    target_id = target_user.id
-    username_display = f"@{target_user.username}" if target_user.username else target_user.mention
+    add_free_user(chat_id, target_user.id)
+    name = f"@{target_user.username}" if target_user.username else target_user.mention
+    await msg.reply(f"✅ Pengguna {name} telah dimasukkan ke daftar free user.")
 
-    if action == "add":
-        add_free_user(chat_id, target_id)
-        await msg.reply(f"✅ Pengguna {username_display} dimasukkan ke daftar free user.")
-    elif action == "remove":
-        remove_free_user(chat_id, target_id)
-        await msg.reply(f"✅ Pengguna {username_display} dihapus dari daftar free user.")
+# --- /unfreeuser: Hapus user dari daftar free ---
+@bot.on_message(filters.command("unfreeuser") & filters.group)
+async def cmd_remove_freeuser(client: Client, msg: Message):
+    user_id = msg.from_user.id
+    chat_id = msg.chat.id
+
+    if not await is_admin(chat_id, user_id):
+        return await msg.reply("⚠️ Hanya admin yang bisa menghapus free user.")
+
+    target_user = None
+    if msg.reply_to_message:
+        target_user = msg.reply_to_message.from_user
+    elif len(msg.command) >= 2:
+        try:
+            target_user = await client.get_users(msg.command[1])
+        except Exception:
+            return await msg.reply("⚠️ Username atau user ID tidak valid.")
     else:
-        await msg.reply("Gunakan action yang benar: `add` atau `remove`.")
+        return await msg.reply("⚠️ Balas pesan pengguna atau beri username/user_id.")
+
+    remove_free_user(chat_id, target_user.id)
+    name = f"@{target_user.username}" if target_user.username else target_user.mention
+    await msg.reply(f"✅ Pengguna {name} telah dihapus dari daftar free user.")
+
+
+# --- /listfree: Lihat daftar free user ---
+@bot.on_message(filters.command("listfree") & filters.group)
+async def cmd_list_freeuser(client: Client, msg: Message):
+    user_id = msg.from_user.id
+    chat_id = msg.chat.id
+
+    if not await is_admin(chat_id, user_id):
+        return await msg.reply("⚠️ Hanya admin yang bisa melihat daftar free user.")
+
+    settings = get_group_settings(chat_id)
+    free_users = settings.get("free_users", [])
+
+    if not free_users:
+        return await msg.reply("📋 Tidak ada pengguna dalam daftar free user.")
+
+    text = "📋 <b>Daftar Free User</b>:\n\n"
+    for uid in free_users:
+        try:
+            user = await client.get_users(uid)
+            display = f"@{user.username}" if user.username else user.mention
+        except Exception:
+            display = f"<code>{uid}</code>"
+        text += f"• {display}\n"
+
+    await msg.reply(text)
+
+#@bot.on_message(filters.command("free") & filters.group)
+#async def cmd_freeuser(client: Client, msg: Message) -> None:
+#    user_id = msg.from_user.id
+#    chat_id = msg.chat.id
+#
+#    if not await is_admin(chat_id, user_id):
+#        await msg.reply("⚠️ Hanya admin yang bisa mengatur free user.")
+#        return
+#
+#    parts = msg.text.split()
+#    if len(parts) < 2:
+#        await msg.reply("Gunakan:\n/reply ke pesan atau /free add @username\n/free remove @username")
+#        return
+
+#    action = parts[1].lower()
+
+    # Coba ambil target user dari reply
+#    target_user = None
+#    if msg.reply_to_message:
+#        target_user = msg.reply_to_message.from_user
+#    elif len(parts) >= 3:
+#        try:
+#            target_user = await client.get_users(parts[2])
+#        except Exception:
+#            await msg.reply("⚠️ Username atau user ID tidak valid.")
+#            return
+#    else:
+#        await msg.reply("⚠️ Kamu harus membalas pesan pengguna atau memberikan @username/user_id.")
+#        return
+#
+#    target_id = target_user.id
+#    username_display = f"@{target_user.username}" if target_user.username else target_user.mention
+#
+#    if action == "add":
+#        add_free_user(chat_id, target_id)
+#        await msg.reply(f"✅ Pengguna {username_display} dimasukkan ke daftar free user.")
+#    elif action == "remove":
+#        remove_free_user(chat_id, target_id)
+#        await msg.reply(f"✅ Pengguna {username_display} dihapus dari daftar free user.")
+#    else:
+#        await msg.reply("Gunakan action yang benar: `add` atau `remove`.")
 
 
 
@@ -840,12 +919,6 @@ async def unauthorize_group(client: Client, msg: Message) -> None:
 
 
 # --- tagall --
-import random
-
-EMOJI_LIST = ["🙎🏿‍♀️", "🤤", "👨🏾‍🦯", "🥍", "💁🏽‍♀️", "🛎", "🫴🏿", "🧞", "🫅", "🦸", "🧙", "🧝", "🧛", "🧟"]
-
-tagall_tasks = {}
-
 
 @bot.on_message(filters.command("tagall") & filters.group)
 async def tagall_emoji_hidden_mentions(client: Client, msg: Message):
