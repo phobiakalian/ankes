@@ -840,16 +840,13 @@ async def unauthorize_group(client: Client, msg: Message) -> None:
 
 
 # --- tagall --
-
 import random
 
-# List emoji bebas (bisa kamu ganti/ubah sesuka hati)
-EMOJI_LIST = [
-    "🙎🏿‍♀️", "🤤", "👨🏾‍🦯", "🥍", "💁🏽‍♀️", "🛎", "🫴🏿", "🧚‍♂️", "🧘🏽", "🧞‍♂️", 
-    "🫵🏽", "👁️", "👤", "🦶", "🧠", "👃", "👄", "🦷", "🦴", "🧍‍♀️", "🫂", "🙇‍♂️"
-]
+EMOJI_LIST = ["🙎🏿‍♀️", "🤤", "👨🏾‍🦯", "🥍", "💁🏽‍♀️", "🛎", "🫴🏿", "🧞", "🫅", "🦸", "🧙", "🧝", "🧛", "🧟"]
 
-tagall_tasks = {}  # pastikan sudah ada di global scope
+tagall_tasks = {}
+
+
 @bot.on_message(filters.command("tagall") & filters.group)
 async def tagall_emoji_hidden_mentions(client: Client, msg: Message):
     chat_id = msg.chat.id
@@ -867,36 +864,44 @@ async def tagall_emoji_hidden_mentions(client: Client, msg: Message):
     additional_text = text_split[1] if len(text_split) > 1 else ""
 
     async def run_tagall():
-        emoji_tag_lines = []
-
         try:
+            total_members = await client.get_chat_members_count(chat_id)
+            limit = max(5, int(total_members * 0.4))
+
+            members = []
             async for member in client.get_chat_members(chat_id):
-                user = member.user
-                if user.is_bot:
+                if member.user and not member.user.is_bot:
+                    members.append(member.user)
+
+            random.shuffle(members)
+            members = members[:limit]
+
+            emoji_tag_lines = [
+                f"{random.choice(EMOJI_LIST)}[ ](tg://user?id={user.id})"
+                for user in members
+            ]
+
+            chunks = [emoji_tag_lines[i:i + 10] for i in range(0, len(emoji_tag_lines), 10)]
+
+            for chunk in chunks:
+                try:
+                    text = f"{additional_text}\n\n" if additional_text else ""
+                    text += " ".join(chunk)
+                    await client.send_message(chat_id, text, disable_web_page_preview=True)
+                    await asyncio.sleep(2)
+                except asyncio.CancelledError:
+                    await client.send_message(chat_id, "⛔ Tagall dihentikan.\n\nPanggilan berakhir.\n@siniunivers")
+                    break
+                except Exception:
                     continue
-                emoji = random.choice(EMOJI_LIST)
-                # Tag tersembunyi
-                mention = f"[{emoji}](tg://user?id={user.id})"
-                emoji_tag_lines.append(mention)
+
+            else:
+                await client.send_message(chat_id, "✅ Tagall selesai.\n\nPanggilan berakhir.\n@siniunivers")
+
         except Exception as e:
-            await msg.reply(f"❌ Gagal mengambil anggota grup: {e}")
-            return
-
-        chunks = [emoji_tag_lines[i:i + 10] for i in range(0, len(emoji_tag_lines), 10)]
-
-        for chunk in chunks:
-            try:
-                text = f"{additional_text}\n\n" if additional_text else ""
-                text += " ".join(chunk)
-                await client.send_message(chat_id, text, reply_to_message_id=msg.id, disable_web_page_preview=True)
-                await asyncio.sleep(1.5)
-            except asyncio.CancelledError:
-                await client.send_message(chat_id, "⛔ Tagall dihentikan.")
-                break
-            except Exception:
-                continue
-
-        tagall_tasks.pop(chat_id, None)
+            await msg.reply(f"❌ Terjadi kesalahan: {e}")
+        finally:
+            tagall_tasks.pop(chat_id, None)
 
     task = asyncio.create_task(run_tagall())
     tagall_tasks[chat_id] = task
