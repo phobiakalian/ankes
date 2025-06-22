@@ -42,7 +42,7 @@ class Yn(Client):
             self.me.username,
         )
         start_message = (
-            "<b>EduuRobot started!</b>\n\n"
+            "<b>Yn | Ankes started!</b>\n\n"
             f"<b>Version number:</b> <code>r{__version_number__} ({__commit__})</code>\n"
             f"<b>Hydrogram:</b> <code>v{hydrogram.__version__}</code>"
         )
@@ -54,4 +54,4 @@ class Yn(Client):
 
     async def stop(self):
         await super().stop()
-        logger.warning("Eduu stopped. Bye!")
+        logger.warning("Yn stopped. Bye!")
