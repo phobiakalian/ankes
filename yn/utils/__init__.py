@@ -1,5 +1,7 @@
 from yn.utils.db import db, db_stats, db_freeusers, db_warnings
 from difflib import get_close_matches
+from typing import Any
+
 # settings
 
 def update_group_setting(chat_id: int, key: str, value: Any) -> None:
