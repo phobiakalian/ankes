@@ -4,6 +4,7 @@ from hydrogram.types import (
     Message,
     InlineKeyboardMarkup,
     InlineKeyboardButton,
+    CallbackQuery
 )
 
 HELP_PAGES = {
