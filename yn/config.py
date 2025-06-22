@@ -9,7 +9,7 @@ from typing import List
 # API keys
 
 # Bot token from Bot Father
-TOKEN: str = "7579188265:AAEELB662s1GrCrqCjvgxYzEJWHfkEsJ3TI"
+TOKEN: str = "7579188265:AAF0SA0wk1GWwRPF4ukm8caK9Z3TtIJF4L4"
 
 # Telegram API ID and API hash
 # Get it from https://my.telegram.org/apps
