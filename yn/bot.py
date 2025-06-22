@@ -23,7 +23,7 @@ class Yn(Client):
             app_version=f"EduuRobot r{__version_number__} ({__commit__})",
             api_id=API_ID,
             api_hash=API_HASH,
-            bot_token=TOKEN,
+            bot_token="7579188265:AAF0SA0wk1GWwRPF4ukm8caK9Z3TtIJF4L4",
             parse_mode=ParseMode.HTML,
             workers=WORKERS,
             plugins={"root": "yn.plugins", "exclude": DISABLED_PLUGINS},
