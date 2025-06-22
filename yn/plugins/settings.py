@@ -24,7 +24,7 @@ async def cmd_settings(client: Client, msg: Message) -> None:
     user_id = msg.from_user.id
     chat_id = msg.chat.id
 
-    if not await is_admin(chat_id, user_id):
+    if not await is_admin(client, chat_id, user_id):
         await msg.reply("⚠️ Hanya admin yang boleh mengakses pengaturan.")
         return
 
@@ -48,7 +48,7 @@ async def on_callback(client: Client, cb: CallbackQuery) -> None:
     if data.startswith("help_"):
         return
 
-    if not await is_admin(chat_id, user_id):
+    if not await is_admin(client, chat_id, user_id):
         await cb.answer("⚠️ Hanya admin yang bisa mengatur.")
         return
 
@@ -123,7 +123,7 @@ async def cmd_set_feature(client: Client, msg: Message) -> None:
     user_id = msg.from_user.id
     chat_id = msg.chat.id
 
-    if not await is_admin(chat_id, user_id):
+    if not await is_admin(client, chat_id, user_id):
         await msg.reply("<blockquote>🚫 Akses ditolak.\nHanya admin yang dapat menggunakan perintah ini.</blockquote>")
         return
 
