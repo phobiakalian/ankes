@@ -2,20 +2,7 @@ from hydrogram import Client, filters
 from hydrogram.types import Message
 from yn.utils.utils import is_admin
 from yn.utils.settings import get_group_settings
-from yn.utils.db import db_freeusers 
-
-
-
-def is_free_user(chat_id: int, user_id: int) -> bool:
-    docs = db_freeusers.find({"chat_id": chat_id, "user_id": user_id})
-    return len(docs) > 0
-
-def add_free_user(chat_id: int, user_id: int) -> None:
-    if not is_free_user(chat_id, user_id):
-        db_freeusers.insert_one({"chat_id": chat_id, "user_id": user_id})
-
-def remove_free_user(chat_id: int, user_id: int) -> None:
-    db_freeusers.delete_one({"chat_id": chat_id, "user_id": user_id})
+from yn.utils import add_free_user, remove_free_user
 
 
 # --- /freeuser command ---

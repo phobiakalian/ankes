@@ -9,55 +9,9 @@ from hydrogram.types import (
     InlineKeyboardButton,
 )
 from yn import user_message_timestamps, user_message_ids
-from yn.utils.db import db_stats
 from yn.utils.utils import is_admin
-from yn.utils.db import db_freeusers, db_warnings
 from yn.utils.settings import get_group_settings
-
-# --stats--
-def add_violation_stat(chat_id: int, user_id: int, username: str):
-    doc = db_stats.find({"chat_id": chat_id, "user_id": user_id})
-    if not doc:
-        db_stats.insert_one({"chat_id": chat_id, "user_id": user_id, "username": username, "violations": 1, "messages": 0})
-    else:
-        db_stats.update_one(
-            {"chat_id": chat_id, "user_id": user_id},
-            {"$inc": {"violations": 1}, "$set": {"username": username}}
-        )
-
-def is_free_user(chat_id: int, user_id: int) -> bool:
-    docs = db_freeusers.find({"chat_id": chat_id, "user_id": user_id})
-    return len(docs) > 0
-
-
-def log_user_message(chat_id: int, user_id: int, username: str):
-    doc = db_stats.find({"chat_id": chat_id, "user_id": user_id})
-    if not doc:
-        db_stats.insert_one({"chat_id": chat_id, "user_id": user_id, "username": username, "violations": 0, "messages": 1})
-    else:
-        db_stats.update_one(
-            {"chat_id": chat_id, "user_id": user_id},
-            {"$inc": {"messages": 1}, "$set": {"username": username}}
-        )
-
-
-def get_warnings(chat_id: int, user_id: int) -> int:
-    docs = db_warnings.find({"chat_id": chat_id, "user_id": user_id})
-    if docs:
-        return docs[0].get("count", 0)
-    return 0
-
-def add_warning(chat_id: int, user_id: int) -> int:
-    docs = db_warnings.find({"chat_id": chat_id, "user_id": user_id})
-    if not docs:
-        db_warnings.insert_one({"chat_id": chat_id, "user_id": user_id, "count": 1})
-        return 1
-    count = docs[0]["count"] + 1
-    db_warnings.update_one({"chat_id": chat_id, "user_id": user_id}, {"$set": {"count": count}})
-    return count
-
-def reset_warnings(chat_id: int, user_id: int) -> None:
-    db_warnings.delete_one({"chat_id": chat_id, "user_id": user_id})
+from yn.utils import add_violation_stat, is_free_user, log_user_message, add_warning, reset_warnings
 
 def contains_link(message) -> bool:
     entities = (message.entities or []) + (message.caption_entities or [])

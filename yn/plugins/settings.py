@@ -8,18 +8,10 @@ from hydrogram.types import (
 from typing import Optional, Dict, Any
 
 from hydrogram.errors.exceptions.bad_request_400 import MessageNotModified
-from difflib import get_close_matches
 
-from yn.utils.db import db 
+from yn.utils import update_group_setting, get_closest_feature_name
 from yn.utils.settings import get_group_settings, settings_keyboard
 from yn.utils.utils import is_admin
-
-def get_closest_feature_name(input_name: str, valid_features: set) -> str | None:
-    matches = get_close_matches(input_name, valid_features, n=1, cutoff=0.6)
-    return matches[0] if matches else None
-
-def update_group_setting(chat_id: int, key: str, value: Any) -> None:
-    db.update_one({"chat_id": chat_id}, {"$set": {key: value}})
 
 @Client.on_message(filters.command("settings") & filters.group)
 async def cmd_settings(client: Client, msg: Message) -> None:
