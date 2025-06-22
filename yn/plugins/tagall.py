@@ -36,7 +36,7 @@ async def tagall_emoji_hidden_mentions(client: Client, msg: Message):
             members = members[:limit]
 
             emoji_tag_lines = [
-                f"{random.choice(EMOJI_LIST)}[ ](tg://user?id={user.id})"
+                f"[{random.choice(EMOJI_LIST)}](tg://user?id={user.id})"
                 for user in members
             ]
 
