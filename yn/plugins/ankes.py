@@ -29,7 +29,7 @@ async def handle_violation(client: Client, msg: Message) -> None:
     if is_free_user(chat_id, user_id):
         return
     
-    if await is_admin(chat_id, user_id):
+    if await is_admin(client, chat_id, user_id):
         return
 
     settings = get_group_settings(chat_id)
