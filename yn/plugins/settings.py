@@ -5,6 +5,8 @@ from hydrogram.types import (
     InlineKeyboardButton,
     CallbackQuery
 )
+from typing import Optional, Dict, Any
+
 from hydrogram.errors.exceptions.bad_request_400 import MessageNotModified
 from difflib import get_close_matches
 
