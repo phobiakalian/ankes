@@ -231,3 +231,12 @@ class YnDB:
                             grouped[key][acc_key] = val
             grouped[key]["_count"] += 1
         return list(grouped.values())
+    
+
+db = YnDB("ankesDB.sqlite3", "groups")
+db_warnings = YnDB("ankeswarn.sqlite3", "warnings")
+db_freeusers = YnDB("ankesfree.sqlite3", "freeusers")
+db_authorize = YnDB("ankesauth.sqlite3", "authorize")
+db_stats = YnDB("ankesstats.sqlite3", "stats")
+db_users = YnDB("ankesusers.sqlite3", "users")
+

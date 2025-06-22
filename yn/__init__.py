@@ -1,10 +1,18 @@
 """Yn core package."""
 
 from subprocess import run
-from yn.utils.db import YnDB 
+from collections import defaultdict
+from yn.bot import Yn
 
+from yn.utils.db import db, db_warnings, db_freeusers, db_authorize, db_stats, db_users 
 
-db_users = YnDB("users.sqlite3", "users")
+EMOJI_LIST = ["🙎🏿‍♀️", "🤤", "👨🏾‍🦯", "🥍", "💁🏽‍♀️", "🛎", "🫴🏿", "🧞", "🫅", "🦸", "🧙", "🧝", "🧛", "🧟"]
+tagall_tasks = {}
+
+user_message_timestamps = defaultdict(list)
+user_message_ids = defaultdict(list)
+
+bot = Yn()
 
 __commit__ = (
     run(["git", "rev-parse", "--short", "HEAD"], capture_output=True, check=False)
