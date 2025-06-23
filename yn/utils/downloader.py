@@ -3,7 +3,7 @@ import os
 import requests
 from yt_dlp import YoutubeDL
 from io import BytesIO
-from thumb import create_player_card
+from yn.utils.thumb import create_player_card
 
 def download_audio(query: str) -> tuple[str, str, str, int]:
     ydl_opts = {
