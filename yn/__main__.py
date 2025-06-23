@@ -4,8 +4,8 @@ import platform
 import sys
 import os
 from hydrogram import idle
-
-from yn.bot import Yn, userbot, call, LOOP
+from yn import LOOP
+from yn.bot import Yn, userbot, call
 from uvloop import install
 
 logging.basicConfig(

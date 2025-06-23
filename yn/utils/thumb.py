@@ -28,9 +28,9 @@ def create_player_card(thumbnail_url: str, title: str, artist: str, duration: st
 
     # Font
     try:
-        font_title = ImageFont.truetype("DejaVuSans-Bold.ttf", 36)
-        font_artist = ImageFont.truetype("DejaVuSans.ttf", 24)
-        font_small = ImageFont.truetype("DejaVuSans.ttf", 18)
+        font_title = ImageFont.truetype("font/DejaVuSans-Bold.ttf", 36)
+        font_artist = ImageFont.truetype("font/DejaVuSans.ttf", 24)
+        font_small = ImageFont.truetype("font/DejaVuSans.ttf", 18)
     except:
         font_title = font_artist = font_small = ImageFont.load_default()
 
