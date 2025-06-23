@@ -64,3 +64,21 @@ async def tagall_emoji_hidden_mentions(client: Client, msg: Message):
 
     task = asyncio.create_task(run_tagall())
     tagall_tasks[chat_id] = task
+
+
+@Client.on_message(filters.command("stoptagall") & filters.group)
+async def cmd_stoptagall(client: Client, msg: Message):
+    chat_id = msg.chat.id
+    user_id = msg.from_user.id
+
+    if not await is_admin(client, chat_id, user_id):
+        await msg.reply("⚠️ Hanya admin yang bisa menghentikan tagall.")
+        return
+
+    task = tagall_tasks.get(chat_id)
+    if task and not task.done():
+        task.cancel()
+        await msg.reply("✅ Proses tagall dihentikan.")
+    else:
+        await msg.reply("ℹ️ Tidak ada proses tagall yang sedang berlangsung.")
+

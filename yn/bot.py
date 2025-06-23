@@ -6,13 +6,15 @@ from hydrogram import Client
 from hydrogram.enums import ParseMode
 from hydrogram.errors import BadRequest
 from hydrogram.raw.all import layer
-
+from pytgcalls import PyTgCalls
 from yn.config import API_HASH, API_ID, DISABLED_PLUGINS, LOG_CHAT, TOKEN, WORKERS
 
 from . import __commit__, __version_number__
 
 logger = logging.getLogger(__name__)
 
+userbot = Client("user", api_id=API_ID, api_hash=API_HASH)
+call = PyTgCalls(userbot)
 
 class Yn(Client):
     def __init__(self):
