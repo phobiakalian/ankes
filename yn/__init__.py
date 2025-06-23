@@ -1,10 +1,11 @@
 """Yn core package."""
-
+import asyncio
 from subprocess import run
 from collections import defaultdict
 
 
 from yn.utils.db import db, db_warnings, db_freeusers, db_authorize, db_stats, db_users 
+LOOP = asyncio.get_event_loop()
 
 EMOJI_LIST = ["🙎🏿‍♀️", "🤤", "👨🏾‍🦯", "🥍", "💁🏽‍♀️", "🛎", "🫴🏿", "🧞", "🫅", "🦸", "🧙", "🧝", "🧛", "🧟"]
 tagall_tasks = {}
