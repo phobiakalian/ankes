@@ -5,7 +5,7 @@ import sys
 import os
 from hydrogram import idle
 from yn import LOOP
-from yn.bot import Yn, userbot, call
+from yn.bot import Yn
 from uvloop import install
 
 logging.basicConfig(
@@ -25,8 +25,6 @@ async def main():
 
     try:
         await ynankes.start()
-        await userbot.start()
-        await call.start()
         if "test" not in sys.argv:
             await idle()
     except KeyboardInterrupt:
