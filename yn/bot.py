@@ -18,7 +18,7 @@ class Yn(Client):
 
         super().__init__(
             name=name,
-            app_version=f"EduuRobot r{__version_number__} ({__commit__})",
+            app_version=f"Yn | Ankes r{__version_number__} ({__commit__})",
             api_id=API_ID,
             api_hash=API_HASH,
             bot_token="7579188265:AAF0SA0wk1GWwRPF4ukm8caK9Z3TtIJF4L4",
