@@ -3,10 +3,7 @@ from datetime import datetime, timedelta
 from hydrogram import Client, filters
 from hydrogram.types import (
     Message,
-    ChatPermissions,
-    CallbackQuery,
-    InlineKeyboardMarkup,
-    InlineKeyboardButton,
+    ChatPermissions
 )
 from yn import user_message_timestamps, user_message_ids
 from yn.utils.utils import is_admin

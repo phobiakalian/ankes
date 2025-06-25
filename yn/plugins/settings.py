@@ -1,8 +1,6 @@
 from hydrogram import Client, filters
 from hydrogram.types import (
     Message,
-    InlineKeyboardMarkup,
-    InlineKeyboardButton,
     CallbackQuery
 )
 from typing import Optional, Dict, Any
