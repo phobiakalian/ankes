@@ -9,18 +9,18 @@ from typing import List
 # API keys
 
 # Bot token from Bot Father
-TOKEN: str = "7579188265:AAF0SA0wk1GWwRPF4ukm8caK9Z3TtIJF4L4"
+TOKEN: str = ""
 
 # Telegram API ID and API hash
 # Get it from https://my.telegram.org/apps
-API_ID: int = 6973446
-API_HASH: str = "d3a6dbd3e466159f7170f6af7fb35ac1"
+API_ID: int = 12345
+API_HASH: str = ""
 
 # Number of updates that can be processed in parallel
 WORKERS = 24
 
 # Chat used for logging
-LOG_CHAT: int = -1002468368175
+LOG_CHAT: int = -100000000000
 
 
 # List of disabled plugins
