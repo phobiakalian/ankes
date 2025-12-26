@@ -23,12 +23,12 @@ tagall_tasks = {}
 user_message_timestamps = defaultdict(list)
 user_message_ids = defaultdict(list)
 
-API_TOKEN = "7579188265:AAEELB662s1GrCrqCjvgxYzEJWHfkEsJ3TI"
+API_TOKEN = "7579188265:ABCD1239"
 
 bot = Client(
     name="not",
-    api_hash="d3a6dbd3e466159f7170f6af7fb35ac1",
-    api_id=6973446,
+    api_hash="",
+    api_id=1,
     bot_token=API_TOKEN
 )
 # Database
