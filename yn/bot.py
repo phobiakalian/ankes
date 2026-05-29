@@ -56,8 +56,14 @@ class Yn(Client):
         if LOG_CHAT:
             try:
                 await self.send_message(chat_id=LOG_CHAT, text=start_message)
-            except BadRequest:
-                logger.warning("Unable to send message to LOG_CHAT.")
+                logger.info(f"Start message sent to LOG_CHAT ({LOG_CHAT})")
+            except Exception as e:
+                logger.warning(
+                    f"Gagal mengirim pesan ke LOG_CHAT ({LOG_CHAT}). "
+                    f"Pastikan bot sudah join grup/channel tersebut dan dijadikan admin (jika channel). "
+                    f"Error: {e}"
+                )
+                logger.info("Bot tetap berjalan tanpa log chat.")
 
     async def stop(self) -> None:
         """Stop the bot client."""
