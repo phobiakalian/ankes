@@ -253,19 +253,24 @@ async def delete_note(client: Client, message: Message):
     note_name = message.command[1].lower()
     
     try:
-        cursor = db.execute(
-            "SELECT COUNT(*) FROM notes WHERE chat_id = ? AND note_name = ?",
-            (message.chat.id, note_name)
-        )
-        if cursor.fetchone()[0] == 0:
-            await message.reply(get_text(lang, "note_not_found", name=note_name))
-            return
-        
-        db.execute(
-            "DELETE FROM notes WHERE chat_id = ? AND note_name = ?",
-            (message.chat.id, note_name)
-        )
-        db.commit()
+        with _notes_lock:
+            conn = _get_notes_connection()
+            cursor = conn.cursor()
+            cursor.execute(
+                "SELECT COUNT(*) FROM notes WHERE chat_id = ? AND note_name = ?",
+                (message.chat.id, note_name)
+            )
+            if cursor.fetchone()[0] == 0:
+                await message.reply(get_text(lang, "note_not_found", name=note_name))
+                conn.close()
+                return
+            
+            cursor.execute(
+                "DELETE FROM notes WHERE chat_id = ? AND note_name = ?",
+                (message.chat.id, note_name)
+            )
+            conn.commit()
+            conn.close()
         
         await message.reply(
             get_text(lang, "success") + " " +
@@ -285,26 +290,30 @@ async def hashtag_note(client: Client, message: Message):
     note_name = message.text[1:].lower()
     
     try:
-        cursor = db.execute(
-            "SELECT content, content_type FROM notes WHERE chat_id = ? AND note_name = ?",
-            (message.chat.id, note_name)
-        )
-        result = cursor.fetchone()
-        
-        if result:
-            content, content_type = result
+        with _notes_lock:
+            conn = _get_notes_connection()
+            cursor = conn.cursor()
+            cursor.execute(
+                "SELECT content, content_type FROM notes WHERE chat_id = ? AND note_name = ?",
+                (message.chat.id, note_name)
+            )
+            result = cursor.fetchone()
             
-            # Send the note based on content type
-            if content_type == "photo":
-                await message.reply_photo(photo=content)
-            elif content_type == "document":
-                await message.reply_document(document=content)
-            elif content_type == "video":
-                await message.reply_video(video=content)
-            elif content_type == "sticker":
-                await message.reply_sticker(sticker=content)
-            else:
-                await message.reply(content)
+            if result:
+                content, content_type = result
+                
+                # Send the note based on content type
+                if content_type == "photo":
+                    await message.reply_photo(photo=content)
+                elif content_type == "document":
+                    await message.reply_document(document=content)
+                elif content_type == "video":
+                    await message.reply_video(video=content)
+                elif content_type == "sticker":
+                    await message.reply_sticker(sticker=content)
+                else:
+                    await message.reply(content)
+            conn.close()
     except Exception as e:
         logger.error(f"Error handling hashtag note: {e}")
 

@@ -5,13 +5,8 @@ Module ini menangani perintah /start untuk pengguna privat dan mencatat statisti
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
-
 from pyrogram import Client, filters
 from pyrogram.types import InlineKeyboardButton, InlineKeyboardMarkup, Message
-
-if TYPE_CHECKING:
-    from pymongo.collection import Collection
 
 from yn.utils.db import db_users
 
@@ -37,10 +32,10 @@ def _register_user(user_id: int) -> None:
         user_id: ID Telegram pengguna yang akan didaftarkan.
     """
     try:
-        if isinstance(db_users, Collection):
-            existing_user = db_users.find_one({"user_id": user_id})
-            if not existing_user:
-                db_users.insert_one({"user_id": user_id, "registered_at": __import__("datetime").datetime.utcnow()})
+        # db_users adalah instance YnDB, bukan MongoDB Collection
+        existing_user = db_users.find({"user_id": user_id})
+        if not existing_user:
+            db_users.insert_one({"user_id": user_id, "registered_at": __import__("datetime").datetime.utcnow()})
     except Exception as e:
         # Log error tapi jangan crash bot
         print(f"[WARNING] Gagal mendaftarkan user {user_id}: {e}")
