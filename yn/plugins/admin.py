@@ -9,8 +9,8 @@ import re
 from datetime import datetime, timedelta
 from typing import Optional, Tuple
 
-from hydrogram import Client, filters
-from hydrogram.types import ChatPermissions, Message
+from pyrogram import Client, filters
+from pyrogram.types import ChatPermissions, Message
 
 from yn.utils.utils import is_admin
 

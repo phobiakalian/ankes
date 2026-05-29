@@ -6,7 +6,7 @@ import os
 import sys
 from signal import SIGINT, SIGTERM, signal
 
-from hydrogram import idle
+from pyrogram import idle
 from uvloop import install
 
 from yn import LOOP
@@ -19,8 +19,8 @@ logging.basicConfig(
 )
 
 # To avoid some annoying log
-logging.getLogger("hydrogram.syncer").setLevel(logging.WARNING)
-logging.getLogger("hydrogram.client").setLevel(logging.WARNING)
+logging.getLogger("pyrogram.syncer").setLevel(logging.WARNING)
+logging.getLogger("pyrogram.client").setLevel(logging.WARNING)
 
 os.makedirs("downloads", exist_ok=True)
 

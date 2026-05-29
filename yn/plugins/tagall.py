@@ -1,6 +1,6 @@
 import random, asyncio
-from hydrogram import Client, filters
-from hydrogram.types import Message
+from pyrogram import Client, filters
+from pyrogram.types import Message
 from yn.utils.utils import is_admin
 from yn import tagall_tasks, EMOJI_LIST
 

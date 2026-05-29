@@ -10,8 +10,8 @@ import time
 from datetime import datetime, timedelta
 from typing import Optional
 
-from hydrogram import Client, filters
-from hydrogram.types import ChatPermissions, Message
+from pyrogram import Client, filters
+from pyrogram.types import ChatPermissions, Message
 
 from yn import user_message_timestamps, user_message_ids
 from yn.utils.settings import get_group_settings

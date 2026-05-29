@@ -2,7 +2,7 @@
 
 from typing import Any, Dict
 
-from hydrogram.types import InlineKeyboardButton, InlineKeyboardMarkup
+from pyrogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 
 from yn.utils.db import db
 

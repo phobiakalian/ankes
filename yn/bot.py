@@ -4,11 +4,11 @@ import logging
 import time
 from typing import Final
 
-import hydrogram
-from hydrogram import Client
-from hydrogram.enums import ParseMode
-from hydrogram.errors import BadRequest
-from hydrogram.raw.all import layer
+import pyrogram
+from pyrogram import Client
+from pyrogram.enums import ParseMode
+from pyrogram.errors import BadRequest
+from pyrogram.raw.all import layer
 
 from yn.config import API_HASH, API_ID, DISABLED_PLUGINS, LOG_CHAT, TOKEN, WORKERS
 from yn import __commit__, __version_number__
@@ -42,15 +42,15 @@ class Yn(Client):
         self.start_time: float = time.time()
 
         logger.info(
-            "Yn running with Hydrogram v%s (Layer %s) started on @%s. Hi!",
-            hydrogram.__version__,
+            "Yn running with Pyrogram v%s (Layer %s) started on @%s. Hi!",
+            pyrogram.__version__,
             layer,
             self.me.username,
         )
         start_message: str = (
             "<b>Yn | Ankes started!</b>\n\n"
             f"<b>Version number:</b> <code>r{__version_number__} ({__commit__})</code>\n"
-            f"<b>Hydrogram:</b> <code>v{hydrogram.__version__}</code>"
+            f"<b>Pyrogram:</b> <code>v{pyrogram.__version__}</code>"
         )
 
         if LOG_CHAT:

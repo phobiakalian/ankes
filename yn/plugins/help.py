@@ -7,8 +7,8 @@ from __future__ import annotations
 
 from typing import Any, Dict, List, Tuple
 
-from hydrogram import Client, filters
-from hydrogram.types import CallbackQuery, InlineKeyboardButton, InlineKeyboardMarkup, Message
+from pyrogram import Client, filters
+from pyrogram.types import CallbackQuery, InlineKeyboardButton, InlineKeyboardMarkup, Message
 
 # Definisi halaman bantuan dengan tipe data yang jelas
 HELP_PAGES: Dict[str, Dict[str, Any]] = {

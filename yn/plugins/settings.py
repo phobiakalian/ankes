@@ -7,9 +7,9 @@ from __future__ import annotations
 
 from typing import Any, Dict, Optional
 
-from hydrogram import Client, filters
-from hydrogram.errors.exceptions.bad_request_400 import MessageNotModified
-from hydrogram.types import CallbackQuery, Message
+from pyrogram import Client, filters
+from pyrogram.errors.exceptions.bad_request_400 import MessageNotModified
+from pyrogram.types import CallbackQuery, Message
 
 from yn.utils import get_closest_feature_name, update_group_setting
 from yn.utils.settings import get_group_settings, settings_keyboard

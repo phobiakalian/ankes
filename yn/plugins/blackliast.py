@@ -7,8 +7,8 @@ from __future__ import annotations
 
 from typing import List, Set
 
-from hydrogram import Client, filters
-from hydrogram.types import Message
+from pyrogram import Client, filters
+from pyrogram.types import Message
 
 from yn.utils.settings import get_group_settings
 from yn.utils.utils import is_admin

@@ -6,6 +6,7 @@ Allows admins to change bot language and manage i18n settings.
 from pyrogram import Client, filters
 from pyrogram.types import Message, InlineKeyboardMarkup, InlineKeyboardButton, CallbackQuery
 import logging
+import sqlite3
 
 from yn.utils.db import db
 from yn.plugins.i18n.translations import (
@@ -13,19 +14,88 @@ from yn.plugins.i18n.translations import (
     get_available_languages, 
     is_language_supported,
     DEFAULT_LANGUAGE,
-    LanguageManager
 )
 from yn.utils.utils import admin_check
 
 logger = logging.getLogger(__name__)
 
-# Initialize language manager
-lang_manager = LanguageManager(db)
+# Database connection for language settings
+_lang_db_conn = sqlite3.connect("language_settings.sqlite3", check_same_thread=False)
+
+def _init_lang_db():
+    """Initialize language database tables."""
+    cursor = _lang_db_conn.cursor()
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS chat_languages (
+            chat_id INTEGER PRIMARY KEY,
+            language_code TEXT DEFAULT 'id',
+            auto_detect BOOLEAN DEFAULT 0,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+    """)
+    _lang_db_conn.commit()
+
+_init_lang_db()
 
 
 def get_chat_language(chat_id: int) -> str:
     """Get language for a chat."""
-    return lang_manager.get_chat_language(chat_id)
+    cursor = _lang_db_conn.cursor()
+    cursor.execute(
+        "SELECT language_code FROM chat_languages WHERE chat_id = ?",
+        (chat_id,)
+    )
+    result = cursor.fetchone()
+    return result[0] if result else DEFAULT_LANGUAGE
+
+
+def set_chat_language(chat_id: int, lang_code: str) -> bool:
+    """Set language for a chat."""
+    if not is_language_supported(lang_code):
+        return False
+    
+    cursor = _lang_db_conn.cursor()
+    cursor.execute("""
+        INSERT OR REPLACE INTO chat_languages 
+        (chat_id, language_code, updated_at) 
+        VALUES (?, ?, CURRENT_TIMESTAMP)
+    """, (chat_id, lang_code))
+    _lang_db_conn.commit()
+    return True
+
+
+def is_auto_detect_enabled(chat_id: int) -> bool:
+    """Check if auto-detect is enabled for a chat."""
+    cursor = _lang_db_conn.cursor()
+    cursor.execute(
+        "SELECT auto_detect FROM chat_languages WHERE chat_id = ?",
+        (chat_id,)
+    )
+    result = cursor.fetchone()
+    return bool(result and result[0])
+
+
+def enable_auto_detect(chat_id: int):
+    """Enable automatic language detection for a chat."""
+    cursor = _lang_db_conn.cursor()
+    cursor.execute("""
+        INSERT OR REPLACE INTO chat_languages 
+        (chat_id, auto_detect, updated_at) 
+        VALUES (?, 1, CURRENT_TIMESTAMP)
+    """, (chat_id,))
+    _lang_db_conn.commit()
+
+
+def disable_auto_detect(chat_id: int):
+    """Disable automatic language detection for a chat."""
+    cursor = _lang_db_conn.cursor()
+    cursor.execute("""
+        UPDATE chat_languages 
+        SET auto_detect = 0, updated_at = CURRENT_TIMESTAMP 
+        WHERE chat_id = ?
+    """, (chat_id,))
+    _lang_db_conn.commit()
 
 
 @Client.on_message(filters.command(["language", "lang", "setlang"]) & filters.group)
@@ -38,7 +108,7 @@ async def set_language(client: Client, message: Message):
     """
     chat_id = message.chat.id
     current_lang = get_chat_language(chat_id)
-    lang = current_lang  # Use current language for messages
+    lang = current_lang
     
     # If language code provided
     if len(message.command) > 1:
@@ -51,7 +121,7 @@ async def set_language(client: Client, message: Message):
             )
             return
         
-        if lang_manager.set_chat_language(chat_id, new_lang):
+        if set_chat_language(chat_id, new_lang):
             await message.reply(
                 get_text(lang, "success") + " " +
                 get_text(lang, "settings_language_changed", lang=get_available_languages()[new_lang])
@@ -76,7 +146,7 @@ async def set_language(client: Client, message: Message):
         buttons.append(row)
     
     # Add auto-detect button
-    auto_detect = lang_manager.is_auto_detect_enabled(chat_id)
+    auto_detect = is_auto_detect_enabled(chat_id)
     auto_flag = "✅ " if auto_detect else ""
     buttons.append([InlineKeyboardButton(f"{auto_flag}Auto Detect", callback_data="lang_auto_toggle")])
     
@@ -92,9 +162,7 @@ async def set_language(client: Client, message: Message):
 
 @Client.on_callback_query(filters.regex(r"^lang_"))
 async def language_callback(client: Client, callback_query: CallbackQuery):
-    """
-    Handle language selection callbacks.
-    """
+    """Handle language selection callbacks."""
     data = callback_query.data
     chat_id = callback_query.message.chat.id
     current_lang = get_chat_language(chat_id)
@@ -105,8 +173,7 @@ async def language_callback(client: Client, callback_query: CallbackQuery):
             new_lang = data.replace("lang_", "")
             
             if is_language_supported(new_lang):
-                if lang_manager.set_chat_language(chat_id, new_lang):
-                    # Update the message with new language
+                if set_chat_language(chat_id, new_lang):
                     lang = new_lang
                     languages = get_available_languages()
                     
@@ -121,7 +188,7 @@ async def language_callback(client: Client, callback_query: CallbackQuery):
                                 row.append(InlineKeyboardButton(f"{flag}{name}", callback_data=f"lang_{code}"))
                         buttons.append(row)
                     
-                    auto_detect = lang_manager.is_auto_detect_enabled(chat_id)
+                    auto_detect = is_auto_detect_enabled(chat_id)
                     auto_flag = "✅ " if auto_detect else ""
                     buttons.append([InlineKeyboardButton(f"{auto_flag}Auto Detect", callback_data="lang_auto_toggle")])
                     
@@ -142,16 +209,15 @@ async def language_callback(client: Client, callback_query: CallbackQuery):
         
         elif data == "lang_auto_toggle":
             # Toggle auto-detect
-            auto_detect = lang_manager.is_auto_detect_enabled(chat_id)
+            auto_detect = is_auto_detect_enabled(chat_id)
             
             if auto_detect:
-                lang_manager.disable_auto_detect(chat_id)
+                disable_auto_detect(chat_id)
                 action_text = "dimatikan"
             else:
-                lang_manager.enable_auto_detect(chat_id)
+                enable_auto_detect(chat_id)
                 action_text = "diaktifkan"
             
-            # Refresh the keyboard
             lang = current_lang
             languages = get_available_languages()
             
@@ -166,7 +232,7 @@ async def language_callback(client: Client, callback_query: CallbackQuery):
                         row.append(InlineKeyboardButton(f"{flag}{name}", callback_data=f"lang_{code}"))
                 buttons.append(row)
             
-            auto_detect = lang_manager.is_auto_detect_enabled(chat_id)
+            auto_detect = is_auto_detect_enabled(chat_id)
             auto_flag = "✅ " if auto_detect else ""
             buttons.append([InlineKeyboardButton(f"{auto_flag}Auto Detect", callback_data="lang_auto_toggle")])
             
@@ -191,13 +257,11 @@ async def language_callback(client: Client, callback_query: CallbackQuery):
 
 @Client.on_message(filters.command(["mylang"]) & filters.group)
 async def my_language(client: Client, message: Message):
-    """
-    Show current language setting.
-    """
+    """Show current language setting."""
     chat_id = message.chat.id
     current_lang = get_chat_language(chat_id)
     languages = get_available_languages()
-    auto_detect = lang_manager.is_auto_detect_enabled(chat_id)
+    auto_detect = is_auto_detect_enabled(chat_id)
     
     text = (
         f"🌐 **Bahasa Saat Ini:** {languages.get(current_lang, current_lang)}\n\n"
@@ -206,13 +270,3 @@ async def my_language(client: Client, message: Message):
     )
     
     await message.reply(text)
-
-
-def init_language_db():
-    """Initialize language database tables."""
-    # This is handled by LanguageManager class
-    pass
-
-
-# Initialize on module load
-init_language_db()
