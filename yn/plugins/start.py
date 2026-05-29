@@ -35,7 +35,8 @@ def _register_user(user_id: int) -> None:
         # db_users adalah instance YnDB, bukan MongoDB Collection
         existing_user = db_users.find({"user_id": user_id})
         if not existing_user:
-            db_users.insert_one({"user_id": user_id, "registered_at": __import__("datetime").datetime.utcnow()})
+            from datetime import datetime
+            db_users.insert_one({"user_id": user_id, "registered_at": datetime.utcnow().isoformat()})
     except Exception as e:
         # Log error tapi jangan crash bot
         print(f"[WARNING] Gagal mendaftarkan user {user_id}: {e}")

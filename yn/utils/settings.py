@@ -51,28 +51,50 @@ def settings_keyboard(settings: Dict[str, Any]) -> InlineKeyboardMarkup:
 
 def get_group_settings(chat_id: int) -> Dict[str, Any]:
     """Get group settings from database or create default settings."""
-    docs = db.find({"chat_id": chat_id})
-    if docs:
-        return docs[0]
+    try:
+        docs = db.find({"chat_id": chat_id})
+        if docs:
+            return docs[0]
 
-    default = {
-        "chat_id": chat_id,
-        "antiforward": True,
-        "nolinks": True,
-        "noevents": False,
-        "nocontacts": False,
-        "nolocations": False,
-        "nocommands": False,
-        "nohashtags": False,
-        "novoice": False,
-        "imagefilter": False,
-        "antibot": False,
-        "antiflood": False,
-        "blacklist": False,
-        "action_mode": "delete",  # delete, mute, ban
-        "max_warnings": 3,
-        "badwords": [],  # daftar kata terlarang
-        "free_users": [],  # daftar user bebas aturan
-    }
-    db.insert_one(default)
-    return default
+        default = {
+            "chat_id": chat_id,
+            "antiforward": True,
+            "nolinks": True,
+            "noevents": False,
+            "nocontacts": False,
+            "nolocations": False,
+            "nocommands": False,
+            "nohashtags": False,
+            "novoice": False,
+            "imagefilter": False,
+            "antibot": False,
+            "antiflood": False,
+            "blacklist": False,
+            "action_mode": "delete",  # delete, mute, ban
+            "max_warnings": 3,
+            "badwords": [],  # daftar kata terlarang
+            "free_users": [],  # daftar user bebas aturan
+        }
+        db.insert_one(default)
+        return default
+    except Exception as e:
+        # Return default settings if database error
+        return {
+            "chat_id": chat_id,
+            "antiforward": True,
+            "nolinks": True,
+            "noevents": False,
+            "nocontacts": False,
+            "nolocations": False,
+            "nocommands": False,
+            "nohashtags": False,
+            "novoice": False,
+            "imagefilter": False,
+            "antibot": False,
+            "antiflood": False,
+            "blacklist": False,
+            "action_mode": "delete",
+            "max_warnings": 3,
+            "badwords": [],
+            "free_users": [],
+        }

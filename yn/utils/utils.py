@@ -20,14 +20,14 @@ def admin_check(func: Callable) -> Callable:
     @wraps(func)
     async def wrapper(client, message: Message, *args, **kwargs) -> Any:
         if not message.from_user:
-            return
+            return None
         
         chat_id = message.chat.id
         user_id = message.from_user.id
         
         if not await is_admin(client, chat_id, user_id):
             await message.reply("⚠️ Hanya admin yang boleh menggunakan perintah ini.")
-            return
+            return None
         
         return await func(client, message, *args, **kwargs)
     
