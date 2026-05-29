@@ -1,7 +1,12 @@
-"""Yn Security Bot - Database Module (MongoDB-like API with SQLite)."""
+"""Yn Security Bot - Database Module (MongoDB-like API with SQLite).
+
+This module provides a MongoDB-like interface using SQLite as the backend.
+It supports operations like insert, find, update, delete, and aggregation.
+"""
 
 import json
 import sqlite3
+import threading
 from typing import Any, Dict, List, Optional
 
 
@@ -9,38 +14,70 @@ class YnDB:
     """A MongoDB-like database interface using SQLite as backend."""
 
     def __init__(self, db_file: str, collection: str) -> None:
-        self.conn = sqlite3.connect(db_file, check_same_thread=False)
-        self.cursor = self.conn.cursor()
-        self.collection = collection
-        self._create_collection()
+        """Initialize the database connection and create collection if needed.
+        
+        Args:
+            db_file: Path to the SQLite database file.
+            collection: Name of the collection (table) to use.
+        """
+        self.db_file: str = db_file
+        self.collection: str = collection
+        self._lock: threading.Lock = threading.Lock()
         self._index: Dict[str, Dict[Any, List[int]]] = {}
         self._indexed_fields: set = set()
+        self._create_collection()
+
+    def _get_connection(self) -> sqlite3.Connection:
+        """Get a new database connection."""
+        return sqlite3.connect(self.db_file, check_same_thread=False)
 
     def _create_collection(self) -> None:
         """Create the collection table if it doesn't exist."""
-        self.cursor.execute(
-            f"""
-            CREATE TABLE IF NOT EXISTS {self.collection} (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                doc TEXT NOT NULL
+        with self._lock:
+            conn = self._get_connection()
+            cursor = conn.cursor()
+            cursor.execute(
+                f"""
+                CREATE TABLE IF NOT EXISTS {self.collection} (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    doc TEXT NOT NULL
+                )
+            """
             )
-        """
-        )
-        self.conn.commit()
+            conn.commit()
+            conn.close()
 
     def insert_one(self, document: Dict[str, Any]) -> int:
-        """Insert a single document into the collection."""
-        doc_json = json.dumps(document)
-        self.cursor.execute(
-            f"INSERT INTO {self.collection} (doc) VALUES (?)", (doc_json,)
-        )
-        self.conn.commit()
-        _id = self.cursor.lastrowid
-        self._update_indexes_insert(_id, document)
-        return _id
+        """Insert a single document into the collection.
+        
+        Args:
+            document: The document to insert.
+            
+        Returns:
+            The ID of the inserted document.
+        """
+        with self._lock:
+            conn = self._get_connection()
+            cursor = conn.cursor()
+            doc_json = json.dumps(document)
+            cursor.execute(
+                f"INSERT INTO {self.collection} (doc) VALUES (?)", (doc_json,)
+            )
+            conn.commit()
+            _id = cursor.lastrowid
+            conn.close()
+            self._update_indexes_insert(_id, document)
+            return _id
 
     def insert_many(self, documents: List[Dict[str, Any]]) -> List[int]:
-        """Insert multiple documents into the collection."""
+        """Insert multiple documents into the collection.
+        
+        Args:
+            documents: List of documents to insert.
+            
+        Returns:
+            List of IDs of the inserted documents.
+        """
         ids = []
         for doc in documents:
             _id = self.insert_one(doc)
@@ -48,18 +85,33 @@ class YnDB:
         return ids
 
     def _load_all(self) -> List[Dict[str, Any]]:
-        """Load all documents from the collection."""
-        self.cursor.execute(f"SELECT id, doc FROM {self.collection}")
-        rows = self.cursor.fetchall()
-        results = []
-        for _id, doc_json in rows:
-            doc = json.loads(doc_json)
-            doc["_id"] = _id
-            results.append(doc)
-        return results
+        """Load all documents from the collection.
+        
+        Returns:
+            List of all documents with their _id field.
+        """
+        with self._lock:
+            conn = self._get_connection()
+            cursor = conn.cursor()
+            cursor.execute(f"SELECT id, doc FROM {self.collection}")
+            rows = cursor.fetchall()
+            conn.close()
+            results = []
+            for _id, doc_json in rows:
+                doc = json.loads(doc_json)
+                doc["_id"] = _id
+                results.append(doc)
+            return results
 
     def find(self, query: Optional[Dict[str, Any]] = None) -> List[Dict[str, Any]]:
-        """Find documents matching the query."""
+        """Find documents matching the query.
+        
+        Args:
+            query: Query dictionary (MongoDB-like syntax).
+            
+        Returns:
+            List of matching documents.
+        """
         if query is None or query == {}:
             return self._load_all()
 
@@ -85,7 +137,15 @@ class YnDB:
         return [doc for doc in all_docs if self._matches(doc, query)]
 
     def _matches(self, doc: Dict[str, Any], query: Optional[Dict[str, Any]]) -> bool:
-        """Check if a document matches the query."""
+        """Check if a document matches the query.
+        
+        Args:
+            doc: Document to check.
+            query: Query dictionary.
+            
+        Returns:
+            True if the document matches the query.
+        """
         if not query:
             return True
         for key, cond in query.items():
@@ -99,7 +159,15 @@ class YnDB:
         return True
 
     def _match_operators(self, value: Any, cond: Dict[str, Any]) -> bool:
-        """Match operators for query conditions."""
+        """Match operators for query conditions.
+        
+        Args:
+            value: The value to check.
+            cond: Condition dictionary with operators.
+            
+        Returns:
+            True if the value matches all conditions.
+        """
         for op, cond_val in cond.items():
             if op == "$eq" and value != cond_val:
                 return False
@@ -120,7 +188,15 @@ class YnDB:
         return True
 
     def _get_value(self, doc: Dict[str, Any], key: str) -> Any:
-        """Get nested value from document using dot notation."""
+        """Get nested value from document using dot notation.
+        
+        Args:
+            doc: Document to extract value from.
+            key: Key in dot notation (e.g., "user.name").
+            
+        Returns:
+            The value or None if not found.
+        """
         keys = key.split(".")
         v = doc
         for k in keys:
@@ -133,7 +209,15 @@ class YnDB:
     def update_one(
         self, query: Dict[str, Any], update: Dict[str, Any]
     ) -> bool:
-        """Update a single document matching the query."""
+        """Update a single document matching the query.
+        
+        Args:
+            query: Query to find the document.
+            update: Update operations (e.g., {"$set": {"key": "value"}}).
+            
+        Returns:
+            True if a document was updated.
+        """
         docs = self.find(query)
         if not docs:
             return False
@@ -142,17 +226,29 @@ class YnDB:
         updated_doc = self._apply_update(doc, update)
         updated_doc.pop("_id", None)
         doc_json = json.dumps(updated_doc)
-        self.cursor.execute(
-            f"UPDATE {self.collection} SET doc = ? WHERE id = ?", (doc_json, _id)
-        )
-        self.conn.commit()
+        with self._lock:
+            conn = self._get_connection()
+            cursor = conn.cursor()
+            cursor.execute(
+                f"UPDATE {self.collection} SET doc = ? WHERE id = ?", (doc_json, _id)
+            )
+            conn.commit()
+            conn.close()
         self.create_index_all()
         return True
 
     def _apply_update(
         self, doc: Dict[str, Any], update: Dict[str, Any]
     ) -> Dict[str, Any]:
-        """Apply update operations to a document."""
+        """Apply update operations to a document.
+        
+        Args:
+            doc: Document to update.
+            update: Update operations.
+            
+        Returns:
+            Updated document.
+        """
         for op, fields in update.items():
             if op == "$set":
                 for k, v in fields.items():
@@ -167,7 +263,13 @@ class YnDB:
         return doc
 
     def _set_value(self, doc: Dict[str, Any], key: str, value: Any) -> None:
-        """Set a nested value in a document using dot notation."""
+        """Set a nested value in a document using dot notation.
+        
+        Args:
+            doc: Document to modify.
+            key: Key in dot notation.
+            value: Value to set.
+        """
         keys = key.split(".")
         d = doc
         for k in keys[:-1]:
@@ -177,7 +279,12 @@ class YnDB:
         d[keys[-1]] = value
 
     def _unset_value(self, doc: Dict[str, Any], key: str) -> None:
-        """Remove a nested value from a document using dot notation."""
+        """Remove a nested value from a document using dot notation.
+        
+        Args:
+            doc: Document to modify.
+            key: Key in dot notation.
+        """
         keys = key.split(".")
         d = doc
         for k in keys[:-1]:
@@ -187,34 +294,60 @@ class YnDB:
         d.pop(keys[-1], None)
 
     def delete_one(self, query: Dict[str, Any]) -> bool:
-        """Delete a single document matching the query."""
+        """Delete a single document matching the query.
+        
+        Args:
+            query: Query to find the document.
+            
+        Returns:
+            True if a document was deleted.
+        """
         docs = self.find(query)
         if not docs:
             return False
         _id = docs[0]["_id"]
-        self.cursor.execute(
-            f"DELETE FROM {self.collection} WHERE id = ?", (_id,)
-        )
-        self.conn.commit()
+        with self._lock:
+            conn = self._get_connection()
+            cursor = conn.cursor()
+            cursor.execute(
+                f"DELETE FROM {self.collection} WHERE id = ?", (_id,)
+            )
+            conn.commit()
+            conn.close()
         self.create_index_all()
         return True
 
     def delete_many(self, query: Dict[str, Any]) -> int:
-        """Delete multiple documents matching the query."""
+        """Delete multiple documents matching the query.
+        
+        Args:
+            query: Query to find documents.
+            
+        Returns:
+            Number of deleted documents.
+        """
         docs = self.find(query)
         count = 0
-        for doc in docs:
-            _id = doc["_id"]
-            self.cursor.execute(
-                f"DELETE FROM {self.collection} WHERE id = ?", (_id,)
-            )
-            count += 1
-        self.conn.commit()
+        with self._lock:
+            conn = self._get_connection()
+            cursor = conn.cursor()
+            for doc in docs:
+                _id = doc["_id"]
+                cursor.execute(
+                    f"DELETE FROM {self.collection} WHERE id = ?", (_id,)
+                )
+                count += 1
+            conn.commit()
+            conn.close()
         self.create_index_all()
         return count
 
     def create_index(self, field: str) -> None:
-        """Create an index on a field."""
+        """Create an index on a field.
+        
+        Args:
+            field: Field name to index.
+        """
         all_docs = self._load_all()
         index = {}
         for doc in all_docs:
@@ -232,14 +365,29 @@ class YnDB:
     def _update_indexes_insert(
         self, _id: int, document: Dict[str, Any]
     ) -> None:
-        """Update indexes when a document is inserted."""
+        """Update indexes when a document is inserted.
+        
+        Args:
+            _id: Document ID.
+            document: Inserted document.
+        """
         for field in self._indexed_fields:
             val = self._get_value(document, field)
             if val is not None:
                 self._index.setdefault(field, {}).setdefault(val, []).append(_id)
 
     def aggregate(self, pipeline: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
-        """Perform aggregation pipeline."""
+        """Perform aggregation pipeline.
+        
+        Args:
+            pipeline: List of aggregation stages.
+            
+        Returns:
+            Aggregated results.
+            
+        Raises:
+            ValueError: If an unsupported pipeline stage is encountered.
+        """
         docs = self._load_all()
         for stage in pipeline:
             if "$match" in stage:
@@ -253,7 +401,15 @@ class YnDB:
     def _aggregate_group(
         self, docs: List[Dict[str, Any]], group_spec: Dict[str, Any]
     ) -> List[Dict[str, Any]]:
-        """Perform group aggregation."""
+        """Perform group aggregation.
+        
+        Args:
+            docs: Documents to aggregate.
+            group_spec: Group specification.
+            
+        Returns:
+            Grouped results.
+        """
         group_field = group_spec["_id"].lstrip("$")
         accumulator_fields = {k: v for k, v in group_spec.items() if k != "_id"}
         grouped = {}
@@ -280,10 +436,10 @@ class YnDB:
 
 
 # Database instances
-db = YnDB("ankesDB.sqlite3", "groups")
-db_warnings = YnDB("ankeswarn.sqlite3", "warnings")
-db_freeusers = YnDB("ankesfree.sqlite3", "freeusers")
-db_authorize = YnDB("ankesauth.sqlite3", "authorize")
-db_stats = YnDB("ankesstats.sqlite3", "stats")
-db_users = YnDB("ankesusers.sqlite3", "users")
+db: YnDB = YnDB("ankesDB.sqlite3", "groups")
+db_warnings: YnDB = YnDB("ankeswarn.sqlite3", "warnings")
+db_freeusers: YnDB = YnDB("ankesfree.sqlite3", "freeusers")
+db_authorize: YnDB = YnDB("ankesauth.sqlite3", "authorize")
+db_stats: YnDB = YnDB("ankesstats.sqlite3", "stats")
+db_users: YnDB = YnDB("ankesusers.sqlite3", "users")
 

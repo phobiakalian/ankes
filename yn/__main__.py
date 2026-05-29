@@ -4,6 +4,7 @@ import asyncio
 import logging
 import os
 import sys
+from signal import SIGINT, SIGTERM, signal
 
 from hydrogram import idle
 from uvloop import install
@@ -34,12 +35,20 @@ async def main() -> None:
         await ynankes.start()
         if "test" not in sys.argv:
             await idle()
-    except KeyboardInterrupt:
+    except (KeyboardInterrupt, SystemExit):
         logger.warning("Forced stop… Bye!")
     finally:
         await ynankes.stop()
 
 
+def handle_signal(signum, frame):
+    """Handle shutdown signals gracefully."""
+    logger.info(f"Received signal {signum}, shutting down...")
+    raise SystemExit
+
+
 if __name__ == "__main__":
     install()
+    signal(SIGINT, handle_signal)
+    signal(SIGTERM, handle_signal)
     LOOP.run_until_complete(main())

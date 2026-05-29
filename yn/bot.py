@@ -1,5 +1,8 @@
+"""Yn Security Bot - Telegram Client Module."""
+
 import logging
 import time
+from typing import Final
 
 import hydrogram
 from hydrogram import Client
@@ -10,14 +13,15 @@ from hydrogram.raw.all import layer
 from yn.config import API_HASH, API_ID, DISABLED_PLUGINS, LOG_CHAT, TOKEN, WORKERS
 from yn import __commit__, __version_number__
 
-logger = logging.getLogger(__name__)
+logger: Final = logging.getLogger(__name__)
 
 
 class Yn(Client):
-    """Yn Security Bot - Telegram Group Management Bot"""
+    """Yn Security Bot - Telegram Group Management Bot."""
 
-    def __init__(self):
-        name = self.__class__.__name__.lower()
+    def __init__(self) -> None:
+        """Initialize the Yn bot client."""
+        name: str = self.__class__.__name__.lower()
 
         super().__init__(
             name=name,
@@ -32,9 +36,10 @@ class Yn(Client):
         )
 
     async def start(self) -> None:
+        """Start the bot client."""
         await super().start()
 
-        self.start_time = time.time()
+        self.start_time: float = time.time()
 
         logger.info(
             "Yn running with Hydrogram v%s (Layer %s) started on @%s. Hi!",
@@ -42,7 +47,7 @@ class Yn(Client):
             layer,
             self.me.username,
         )
-        start_message = (
+        start_message: str = (
             "<b>Yn | Ankes started!</b>\n\n"
             f"<b>Version number:</b> <code>r{__version_number__} ({__commit__})</code>\n"
             f"<b>Hydrogram:</b> <code>v{hydrogram.__version__}</code>"
@@ -55,5 +60,6 @@ class Yn(Client):
                 logger.warning("Unable to send message to LOG_CHAT.")
 
     async def stop(self) -> None:
+        """Stop the bot client."""
         await super().stop()
         logger.warning("Yn stopped. Bye!")

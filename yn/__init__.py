@@ -3,6 +3,7 @@
 import asyncio
 from collections import defaultdict
 from subprocess import run
+from typing import Dict, List
 
 from yn.utils.db import (
     db,
@@ -15,7 +16,7 @@ from yn.utils.db import (
 
 LOOP = asyncio.get_event_loop()
 
-EMOJI_LIST = [
+EMOJI_LIST: List[str] = [
     "🙎🏿‍♀️",
     "🤤",
     "👨🏾‍🦯",
@@ -32,7 +33,7 @@ EMOJI_LIST = [
     "🧟",
 ]
 
-tagall_tasks: dict = {}
+tagall_tasks: Dict[int, asyncio.Task] = {}
 user_message_timestamps: defaultdict = defaultdict(list)
 user_message_ids: defaultdict = defaultdict(list)
 
@@ -63,6 +64,6 @@ def _get_version_number() -> str:
         return "0"
 
 
-__commit__ = _get_git_commit()
-__version_number__ = _get_version_number()
-__version__ = f"r{__version_number__} ({__commit__})"
+__commit__: str = _get_git_commit()
+__version_number__: str = _get_version_number()
+__version__: str = f"r{__version_number__} ({__commit__})"
