@@ -1,12 +1,15 @@
+"""Yn Security Bot - Main Entry Point."""
+
 import asyncio
 import logging
-import platform
-import sys
 import os
+import sys
+
 from hydrogram import idle
+from uvloop import install
+
 from yn import LOOP
 from yn.bot import Yn
-from uvloop import install
 
 logging.basicConfig(
     level=logging.INFO,
@@ -17,10 +20,14 @@ logging.basicConfig(
 # To avoid some annoying log
 logging.getLogger("hydrogram.syncer").setLevel(logging.WARNING)
 logging.getLogger("hydrogram.client").setLevel(logging.WARNING)
+
 os.makedirs("downloads", exist_ok=True)
+
 logger = logging.getLogger(__name__)
 
-async def main():
+
+async def main() -> None:
+    """Main function to start the bot."""
     ynankes = Yn()
 
     try:
@@ -28,7 +35,6 @@ async def main():
         if "test" not in sys.argv:
             await idle()
     except KeyboardInterrupt:
-        # exit gracefully
         logger.warning("Forced stop… Bye!")
     finally:
         await ynankes.stop()

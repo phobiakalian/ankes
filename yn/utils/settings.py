@@ -1,11 +1,15 @@
-from yn.utils.db import db 
-from typing import Optional, Dict, Any
-from hydrogram.types import (
-    InlineKeyboardMarkup,
-    InlineKeyboardButton,
-)
+"""Yn Security Bot - Settings Module."""
+
+from typing import Any, Dict
+
+from hydrogram.types import InlineKeyboardButton, InlineKeyboardMarkup
+
+from yn.utils.db import db
+
 
 def settings_keyboard(settings: Dict[str, Any]) -> InlineKeyboardMarkup:
+    """Generate the settings inline keyboard."""
+
     def on_off_button(name: str, label: str) -> InlineKeyboardButton:
         val = settings.get(name, False)
         emoji = "✅" if val else "❌"
@@ -29,11 +33,16 @@ def settings_keyboard(settings: Dict[str, Any]) -> InlineKeyboardMarkup:
     ]
 
     if action_mode in ("mute", "ban"):
-        keyboard.append([
-            InlineKeyboardButton("➖", callback_data="warnings_minus"),
-            InlineKeyboardButton(f"Max Warnings: {settings.get('max_warnings', 3)}", callback_data="noop"),
-            InlineKeyboardButton("➕", callback_data="warnings_plus"),
-        ])
+        keyboard.append(
+            [
+                InlineKeyboardButton("➖", callback_data="warnings_minus"),
+                InlineKeyboardButton(
+                    f"Max Warnings: {settings.get('max_warnings', 3)}",
+                    callback_data="noop",
+                ),
+                InlineKeyboardButton("➕", callback_data="warnings_plus"),
+            ]
+        )
 
     keyboard.append([InlineKeyboardButton("❌ Tutup", callback_data="close_settings")])
 
@@ -41,9 +50,11 @@ def settings_keyboard(settings: Dict[str, Any]) -> InlineKeyboardMarkup:
 
 
 def get_group_settings(chat_id: int) -> Dict[str, Any]:
+    """Get group settings from database or create default settings."""
     docs = db.find({"chat_id": chat_id})
     if docs:
         return docs[0]
+
     default = {
         "chat_id": chat_id,
         "antiforward": True,
@@ -61,6 +72,7 @@ def get_group_settings(chat_id: int) -> Dict[str, Any]:
         "action_mode": "delete",  # delete, mute, ban
         "max_warnings": 3,
         "badwords": [],  # daftar kata terlarang
+        "free_users": [],  # daftar user bebas aturan
     }
     db.insert_one(default)
     return default

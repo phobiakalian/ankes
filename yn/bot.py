@@ -6,13 +6,16 @@ from hydrogram import Client
 from hydrogram.enums import ParseMode
 from hydrogram.errors import BadRequest
 from hydrogram.raw.all import layer
-from yn.config import API_HASH, API_ID, DISABLED_PLUGINS, LOG_CHAT, TOKEN, WORKERS
 
-from . import __commit__, __version_number__
+from yn.config import API_HASH, API_ID, DISABLED_PLUGINS, LOG_CHAT, TOKEN, WORKERS
+from yn import __commit__, __version_number__
 
 logger = logging.getLogger(__name__)
 
+
 class Yn(Client):
+    """Yn Security Bot - Telegram Group Management Bot"""
+
     def __init__(self):
         name = self.__class__.__name__.lower()
 
@@ -21,14 +24,14 @@ class Yn(Client):
             app_version=f"Yn | Ankes r{__version_number__} ({__commit__})",
             api_id=API_ID,
             api_hash=API_HASH,
-            bot_token="7579188265:AAF0SA0wk1GWwRPF4ukm8caK9Z3TtIJF4L4",
+            bot_token=TOKEN,
             parse_mode=ParseMode.HTML,
             workers=WORKERS,
             plugins={"root": "yn.plugins", "exclude": DISABLED_PLUGINS},
             sleep_threshold=180,
         )
 
-    async def start(self):
+    async def start(self) -> None:
         await super().start()
 
         self.start_time = time.time()
@@ -45,11 +48,12 @@ class Yn(Client):
             f"<b>Hydrogram:</b> <code>v{hydrogram.__version__}</code>"
         )
 
-        try:
-            await self.send_message(chat_id=LOG_CHAT, text=start_message)
-        except BadRequest:
-            logger.warning("Unable to send message to LOG_CHAT.")
+        if LOG_CHAT:
+            try:
+                await self.send_message(chat_id=LOG_CHAT, text=start_message)
+            except BadRequest:
+                logger.warning("Unable to send message to LOG_CHAT.")
 
-    async def stop(self):
+    async def stop(self) -> None:
         await super().stop()
         logger.warning("Yn stopped. Bye!")
