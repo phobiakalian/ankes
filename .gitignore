@@ -1,28 +1,39 @@
 ```
+# Database files
+*.sqlite3
+
+# Dependencies
+.venv/
+venv/
+node_modules/
+
+# Cache directories
 __pycache__/
 *.pyc
 *.pyo
 *.pyd
+
+# Logs and temp files
 *.log
+*.tmp
+*.swp
+
+# Editors
+.vscode/
+.idea/
+
+# Environment
 .env
 .env.local
-.env.*
-.DS_Store
-Thumbs.db
+*.env.*
+
+# Coverage reports
 coverage/
 htmlcov/
 .coverage
-.vscode/
-.idea/
-*.swp
-*.swo
-*.tmp
+
+# Build artifacts
 dist/
 build/
 target/
-node_modules/
-.venv/
-venv/
-.mypy_cache/
-.pytest_cache/
 ```

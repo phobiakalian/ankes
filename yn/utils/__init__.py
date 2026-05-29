@@ -4,6 +4,10 @@ from difflib import get_close_matches
 from typing import Any, Optional
 
 from yn.utils.db import db, db_stats, db_freeusers, db_warnings
+from yn.utils.loggers.activity_logger import ActivityLogger
+
+# Initialize activity logger
+activity_logger = ActivityLogger(db)
 
 
 def update_group_setting(chat_id: int, key: str, value: Any) -> None:
@@ -44,6 +48,9 @@ def add_violation_stat(chat_id: int, user_id: int, username: str) -> None:
             {"chat_id": chat_id, "user_id": user_id},
             {"$inc": {"violations": 1}, "$set": {"username": username}},
         )
+    
+    # Also log to activity logger
+    activity_logger.log_violation(chat_id, user_id, "violation", username)
 
 
 # -- Free Users --
@@ -108,6 +115,9 @@ def log_user_message(chat_id: int, user_id: int, username: str) -> None:
             {"chat_id": chat_id, "user_id": user_id},
             {"$inc": {"messages": 1}, "$set": {"username": username}},
         )
+    
+    # Also log to activity logger
+    activity_logger.log_message(chat_id, user_id, username)
 
 
 # -- Warnings --
@@ -142,11 +152,13 @@ def add_warning(chat_id: int, user_id: int) -> int:
     docs = db_warnings.find({"chat_id": chat_id, "user_id": user_id})
     if not docs:
         db_warnings.insert_one({"chat_id": chat_id, "user_id": user_id, "count": 1})
+        activity_logger.log_warning(chat_id)
         return 1
     count = docs[0]["count"] + 1
     db_warnings.update_one(
         {"chat_id": chat_id, "user_id": user_id}, {"$set": {"count": count}}
     )
+    activity_logger.log_warning(chat_id)
     return count
 
 
