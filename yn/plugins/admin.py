@@ -91,7 +91,7 @@ def parse_mute_args(
     return target_user_id, duration_seconds, reason
 
 
-@Client.on_message(filters.command("mute") & filters.group)
+@Client.on_message(filters.command(["mute"]) & filters.group)
 async def mute_user(client: Client, msg: Message) -> None:
     """Membungkam pengguna di grup.
     
@@ -99,42 +99,42 @@ async def mute_user(client: Client, msg: Message) -> None:
     Mendukung durasi custom (contoh: /mute @user 10m spam) dan alasan opsional.
     
     Args:
-        client: Instance klien Hydrogram
+        client: Instance klien Pyrogram
         msg: Objek pesan perintah
     """
-    chat_id: int = msg.chat.id
-    admin_id: int = msg.from_user.id if msg.from_user else 0
-    
-    # Verifikasi admin
-    if not await is_admin(client, chat_id, admin_id):
-        await msg.reply("❌ Hanya admin yang bisa melakukan mute.")
-        return
-    
-    # Parse argumen
-    args_text = msg.text.split(maxsplit=1)[1] if len(msg.text.split()) > 1 else ""
-    target_user_id, duration_seconds, reason = parse_mute_args(args_text, msg.reply_to_message)
-    
-    # Jika target dari mention/username, resolve user
-    if target_user_id is None and args_text:
-        parts = args_text.split()
-        user_ref = parts[0]
-        try:
-            user = await client.get_users(user_ref)
-            target_user_id = user.id
-        except Exception as e:
-            await msg.reply(f"❌ Gagal menemukan user `{user_ref}`: {e}")
-            return
-    
-    if target_user_id is None:
-        await msg.reply("❗ Balas pesan user atau sebut username/ID setelah perintah.")
-        return
-    
-    # Hitung waktu hingga mute berakhir
-    until_date: Optional[datetime] = None
-    if duration_seconds > 0:
-        until_date = datetime.utcnow() + timedelta(seconds=duration_seconds)
-    
     try:
+        chat_id: int = msg.chat.id
+        admin_id: int = msg.from_user.id if msg.from_user else 0
+        
+        # Verifikasi admin
+        if not await is_admin(client, chat_id, admin_id):
+            await msg.reply("❌ Hanya admin yang bisa melakukan mute.")
+            return
+        
+        # Parse argumen
+        args_text = msg.text.split(maxsplit=1)[1] if len(msg.text.split()) > 1 else ""
+        target_user_id, duration_seconds, reason = parse_mute_args(args_text, msg.reply_to_message)
+        
+        # Jika target dari mention/username, resolve user
+        if target_user_id is None and args_text:
+            parts = args_text.split()
+            user_ref = parts[0]
+            try:
+                user = await client.get_users(user_ref)
+                target_user_id = user.id
+            except Exception as e:
+                await msg.reply(f"❌ Gagal menemukan user `{user_ref}`: {e}")
+                return
+        
+        if target_user_id is None:
+            await msg.reply("❗ Balas pesan user atau sebut username/ID setelah perintah.")
+            return
+        
+        # Hitung waktu hingga mute berakhir
+        until_date: Optional[datetime] = None
+        if duration_seconds > 0:
+            until_date = datetime.utcnow() + timedelta(seconds=duration_seconds)
+        
         # Restrict permissions (mute)
         await client.restrict_chat_member(
             chat_id=chat_id,
@@ -155,46 +155,46 @@ async def mute_user(client: Client, msg: Message) -> None:
         await msg.reply(f"⚠️ Gagal mute: {e}")
 
 
-@Client.on_message(filters.command("unmute") & filters.group)
+@Client.on_message(filters.command(["unmute"]) & filters.group)
 async def unmute_user(client: Client, msg: Message) -> None:
     """Membuka bungkam pengguna di grup.
     
     Perintah ini hanya dapat digunakan oleh admin grup.
     
     Args:
-        client: Instance klien Hydrogram
+        client: Instance klien Pyrogram
         msg: Objek pesan perintah
     """
-    chat_id: int = msg.chat.id
-    admin_id: int = msg.from_user.id if msg.from_user else 0
-    
-    # Verifikasi admin
-    if not await is_admin(client, chat_id, admin_id):
-        await msg.reply("❌ Hanya admin yang bisa melakukan unmute.")
-        return
-    
-    # Parse argumen
-    args_text = msg.text.split(maxsplit=1)[1] if len(msg.text.split()) > 1 else ""
-    target_user_id: Optional[int] = None
-    
-    # Target dari reply message
-    if msg.reply_to_message and msg.reply_to_message.from_user:
-        target_user_id = msg.reply_to_message.from_user.id
-    
-    # Target dari mention/ID
-    elif args_text:
-        try:
-            user = await client.get_users(args_text)
-            target_user_id = user.id
-        except Exception as e:
-            await msg.reply(f"❌ Gagal menemukan user: {e}")
-            return
-    
-    if target_user_id is None:
-        await msg.reply("❗ Balas pesan user atau sebut username/ID setelah perintah.")
-        return
-    
     try:
+        chat_id: int = msg.chat.id
+        admin_id: int = msg.from_user.id if msg.from_user else 0
+        
+        # Verifikasi admin
+        if not await is_admin(client, chat_id, admin_id):
+            await msg.reply("❌ Hanya admin yang bisa melakukan unmute.")
+            return
+        
+        # Parse argumen
+        args_text = msg.text.split(maxsplit=1)[1] if len(msg.text.split()) > 1 else ""
+        target_user_id: Optional[int] = None
+        
+        # Target dari reply message
+        if msg.reply_to_message and msg.reply_to_message.from_user:
+            target_user_id = msg.reply_to_message.from_user.id
+        
+        # Target dari mention/ID
+        elif args_text:
+            try:
+                user = await client.get_users(args_text)
+                target_user_id = user.id
+            except Exception as e:
+                await msg.reply(f"❌ Gagal menemukan user: {e}")
+                return
+        
+        if target_user_id is None:
+            await msg.reply("❗ Balas pesan user atau sebut username/ID setelah perintah.")
+            return
+        
         # Restore permissions (unmute)
         permissions = ChatPermissions(
             can_send_messages=True,
@@ -221,7 +221,7 @@ async def unmute_user(client: Client, msg: Message) -> None:
         await msg.reply(f"⚠️ Gagal unmute: {e}")
 
 
-@Client.on_message(filters.command("ban") & filters.group)
+@Client.on_message(filters.command(["ban"]) & filters.group)
 async def ban_user(client: Client, msg: Message) -> None:
     """Melarang pengguna dari grup.
     
@@ -229,42 +229,42 @@ async def ban_user(client: Client, msg: Message) -> None:
     Mendukung durasi ban temporer dan alasan opsional.
     
     Args:
-        client: Instance klien Hydrogram
+        client: Instance klien Pyrogram
         msg: Objek pesan perintah
     """
-    chat_id: int = msg.chat.id
-    admin_id: int = msg.from_user.id if msg.from_user else 0
-    
-    # Verifikasi admin
-    if not await is_admin(client, chat_id, admin_id):
-        await msg.reply("❌ Hanya admin yang bisa melakukan ban.")
-        return
-    
-    # Parse argumen
-    args_text = msg.text.split(maxsplit=1)[1] if len(msg.text.split()) > 1 else ""
-    target_user_id, duration_seconds, reason = parse_mute_args(args_text, msg.reply_to_message)
-    
-    # Jika target dari mention/username, resolve user
-    if target_user_id is None and args_text:
-        parts = args_text.split()
-        user_ref = parts[0]
-        try:
-            user = await client.get_users(user_ref)
-            target_user_id = user.id
-        except Exception as e:
-            await msg.reply(f"❌ Gagal menemukan user `{user_ref}`: {e}")
-            return
-    
-    if target_user_id is None:
-        await msg.reply("❗ Balas pesan user atau sebut username/ID setelah perintah.")
-        return
-    
-    # Hitung waktu hingga ban berakhir (jika temporer)
-    until_date: Optional[datetime] = None
-    if duration_seconds > 0:
-        until_date = datetime.utcnow() + timedelta(seconds=duration_seconds)
-    
     try:
+        chat_id: int = msg.chat.id
+        admin_id: int = msg.from_user.id if msg.from_user else 0
+        
+        # Verifikasi admin
+        if not await is_admin(client, chat_id, admin_id):
+            await msg.reply("❌ Hanya admin yang bisa melakukan ban.")
+            return
+        
+        # Parse argumen
+        args_text = msg.text.split(maxsplit=1)[1] if len(msg.text.split()) > 1 else ""
+        target_user_id, duration_seconds, reason = parse_mute_args(args_text, msg.reply_to_message)
+        
+        # Jika target dari mention/username, resolve user
+        if target_user_id is None and args_text:
+            parts = args_text.split()
+            user_ref = parts[0]
+            try:
+                user = await client.get_users(user_ref)
+                target_user_id = user.id
+            except Exception as e:
+                await msg.reply(f"❌ Gagal menemukan user `{user_ref}`: {e}")
+                return
+        
+        if target_user_id is None:
+            await msg.reply("❗ Balas pesan user atau sebut username/ID setelah perintah.")
+            return
+        
+        # Hitung waktu hingga ban berakhir (jika temporer)
+        until_date: Optional[datetime] = None
+        if duration_seconds > 0:
+            until_date = datetime.utcnow() + timedelta(seconds=duration_seconds)
+        
         # Ban user
         await client.ban_chat_member(
             chat_id=chat_id,
@@ -285,46 +285,46 @@ async def ban_user(client: Client, msg: Message) -> None:
         await msg.reply(f"⚠️ Gagal ban: {e}")
 
 
-@Client.on_message(filters.command("unban") & filters.group)
+@Client.on_message(filters.command(["unban"]) & filters.group)
 async def unban_user(client: Client, msg: Message) -> None:
     """Mencabut larangan pengguna dari grup.
     
     Perintah ini hanya dapat digunakan oleh admin grup.
     
     Args:
-        client: Instance klien Hydrogram
+        client: Instance klien Pyrogram
         msg: Objek pesan perintah
     """
-    chat_id: int = msg.chat.id
-    admin_id: int = msg.from_user.id if msg.from_user else 0
-    
-    # Verifikasi admin
-    if not await is_admin(client, chat_id, admin_id):
-        await msg.reply("❌ Hanya admin yang bisa melakukan unban.")
-        return
-    
-    # Parse argumen
-    args_text = msg.text.split(maxsplit=1)[1] if len(msg.text.split()) > 1 else ""
-    target_user_id: Optional[int] = None
-    
-    # Target dari reply message
-    if msg.reply_to_message and msg.reply_to_message.from_user:
-        target_user_id = msg.reply_to_message.from_user.id
-    
-    # Target dari mention/ID
-    elif args_text:
-        try:
-            user = await client.get_users(args_text)
-            target_user_id = user.id
-        except Exception as e:
-            await msg.reply(f"❌ Gagal menemukan user: {e}")
-            return
-    
-    if target_user_id is None:
-        await msg.reply("❗ Balas pesan user atau sebut username/ID setelah perintah.")
-        return
-    
     try:
+        chat_id: int = msg.chat.id
+        admin_id: int = msg.from_user.id if msg.from_user else 0
+        
+        # Verifikasi admin
+        if not await is_admin(client, chat_id, admin_id):
+            await msg.reply("❌ Hanya admin yang bisa melakukan unban.")
+            return
+        
+        # Parse argumen
+        args_text = msg.text.split(maxsplit=1)[1] if len(msg.text.split()) > 1 else ""
+        target_user_id: Optional[int] = None
+        
+        # Target dari reply message
+        if msg.reply_to_message and msg.reply_to_message.from_user:
+            target_user_id = msg.reply_to_message.from_user.id
+        
+        # Target dari mention/ID
+        elif args_text:
+            try:
+                user = await client.get_users(args_text)
+                target_user_id = user.id
+            except Exception as e:
+                await msg.reply(f"❌ Gagal menemukan user: {e}")
+                return
+        
+        if target_user_id is None:
+            await msg.reply("❗ Balas pesan user atau sebut username/ID setelah perintah.")
+            return
+        
         # Unban user
         await client.unban_chat_member(
             chat_id=chat_id,

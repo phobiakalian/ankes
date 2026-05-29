@@ -15,7 +15,7 @@ from yn.plugins.i18n.translations import (
     is_language_supported,
     DEFAULT_LANGUAGE,
 )
-from yn.utils.utils import admin_check
+from yn.utils.utils import is_admin
 
 logger = logging.getLogger(__name__)
 
@@ -99,75 +99,92 @@ def disable_auto_detect(chat_id: int):
 
 
 @Client.on_message(filters.command(["language", "lang", "setlang"]) & filters.group)
-@admin_check
 async def set_language(client: Client, message: Message):
     """
     Set language for the group.
     
     Usage: /language <code> or /language (shows keyboard)
     """
-    chat_id = message.chat.id
-    current_lang = get_chat_language(chat_id)
-    lang = current_lang
-    
-    # If language code provided
-    if len(message.command) > 1:
-        new_lang = message.command[1].lower()
+    try:
+        chat_id = message.chat.id
+        user_id = message.from_user.id if message.from_user else 0
         
-        if not is_language_supported(new_lang):
-            await message.reply(
-                get_text(lang, "error") + " Bahasa tidak didukung.\n\n"
-                f"Bahasa yang tersedia: {', '.join(get_available_languages().values())}"
-            )
+        # Check admin
+        if not await is_admin(client, chat_id, user_id):
+            await message.reply("⚠️ Hanya admin yang boleh mengubah bahasa.")
             return
         
-        if set_chat_language(chat_id, new_lang):
-            await message.reply(
-                get_text(lang, "success") + " " +
-                get_text(lang, "settings_language_changed", lang=get_available_languages()[new_lang])
-            )
-        else:
-            await message.reply(get_text(lang, "error") + " Gagal mengubah bahasa.")
-        return
-    
-    # Show language selection keyboard
-    languages = get_available_languages()
-    buttons = []
-    
-    # Create button grid (2 columns)
-    lang_items = list(languages.items())
-    for i in range(0, len(lang_items), 2):
-        row = []
-        for j in range(2):
-            if i + j < len(lang_items):
-                code, name = lang_items[i + j]
-                flag = "✅ " if code == current_lang else ""
-                row.append(InlineKeyboardButton(f"{flag}{name}", callback_data=f"lang_{code}"))
-        buttons.append(row)
-    
-    # Add auto-detect button
-    auto_detect = is_auto_detect_enabled(chat_id)
-    auto_flag = "✅ " if auto_detect else ""
-    buttons.append([InlineKeyboardButton(f"{auto_flag}Auto Detect", callback_data="lang_auto_toggle")])
-    
-    keyboard = InlineKeyboardMarkup(buttons)
-    
-    await message.reply(
-        f"{get_text(lang, 'settings_title')}\n\n"
-        f"{get_text(lang, 'settings_language', lang=get_available_languages()[current_lang])}\n\n"
-        "Pilih bahasa yang diinginkan:",
-        reply_markup=keyboard
-    )
+        current_lang = get_chat_language(chat_id)
+        lang = current_lang
+        
+        # If language code provided
+        if len(message.command) > 1:
+            new_lang = message.command[1].lower()
+            
+            if not is_language_supported(new_lang):
+                await message.reply(
+                    get_text(lang, "error") + " Bahasa tidak didukung.\n\n"
+                    f"Bahasa yang tersedia: {', '.join(get_available_languages().values())}"
+                )
+                return
+            
+            if set_chat_language(chat_id, new_lang):
+                await message.reply(
+                    get_text(lang, "success") + " " +
+                    get_text(lang, "settings_language_changed", lang=get_available_languages()[new_lang])
+                )
+            else:
+                await message.reply(get_text(lang, "error") + " Gagal mengubah bahasa.")
+            return
+        
+        # Show language selection keyboard
+        languages = get_available_languages()
+        buttons = []
+        
+        # Create button grid (2 columns)
+        lang_items = list(languages.items())
+        for i in range(0, len(lang_items), 2):
+            row = []
+            for j in range(2):
+                if i + j < len(lang_items):
+                    code, name = lang_items[i + j]
+                    flag = "✅ " if code == current_lang else ""
+                    row.append(InlineKeyboardButton(f"{flag}{name}", callback_data=f"lang_{code}"))
+            buttons.append(row)
+        
+        # Add auto-detect button
+        auto_detect = is_auto_detect_enabled(chat_id)
+        auto_flag = "✅ " if auto_detect else ""
+        buttons.append([InlineKeyboardButton(f"{auto_flag}Auto Detect", callback_data="lang_auto_toggle")])
+        
+        keyboard = InlineKeyboardMarkup(buttons)
+        
+        await message.reply(
+            f"{get_text(lang, 'settings_title')}\n\n"
+            f"{get_text(lang, 'settings_language', lang=get_available_languages()[current_lang])}\n\n"
+            "Pilih bahasa yang diinginkan:",
+            reply_markup=keyboard
+        )
+    except Exception as e:
+        logger.error(f"Error in set_language: {e}")
+        await message.reply(f"⚠️ Terjadi kesalahan: {e}")
 
 
 @Client.on_callback_query(filters.regex(r"^lang_"))
 async def language_callback(client: Client, callback_query: CallbackQuery):
     """Handle language selection callbacks."""
-    data = callback_query.data
-    chat_id = callback_query.message.chat.id
-    current_lang = get_chat_language(chat_id)
-    
     try:
+        data = callback_query.data
+        chat_id = callback_query.message.chat.id
+        user_id = callback_query.from_user.id
+        
+        # Check admin
+        if not await is_admin(client, chat_id, user_id):
+            await callback_query.answer("⚠️ Hanya admin yang bisa mengubah bahasa.", show_alert=True)
+            return
+        
+        current_lang = get_chat_language(chat_id)
+        
         if data.startswith("lang_") and data != "lang_auto_toggle":
             # Language selection
             new_lang = data.replace("lang_", "")
@@ -246,10 +263,10 @@ async def language_callback(client: Client, callback_query: CallbackQuery):
                 reply_markup=keyboard
             )
             await callback_query.answer(f"Auto Detect {action_text}!")
-    
     except Exception as e:
         logger.error(f"Error handling language callback: {e}")
         try:
+            current_lang = get_chat_language(callback_query.message.chat.id)
             await callback_query.answer(get_text(current_lang, "error"), show_alert=True)
         except Exception:
             pass
@@ -258,15 +275,19 @@ async def language_callback(client: Client, callback_query: CallbackQuery):
 @Client.on_message(filters.command(["mylang"]) & filters.group)
 async def my_language(client: Client, message: Message):
     """Show current language setting."""
-    chat_id = message.chat.id
-    current_lang = get_chat_language(chat_id)
-    languages = get_available_languages()
-    auto_detect = is_auto_detect_enabled(chat_id)
-    
-    text = (
-        f"🌐 **Bahasa Saat Ini:** {languages.get(current_lang, current_lang)}\n\n"
-        f"🔍 **Auto Detect:** {'Aktif' if auto_detect else 'Mati'}\n\n"
-        f"Gunakan /language untuk mengubah bahasa."
-    )
-    
-    await message.reply(text)
+    try:
+        chat_id = message.chat.id
+        current_lang = get_chat_language(chat_id)
+        languages = get_available_languages()
+        auto_detect = is_auto_detect_enabled(chat_id)
+        
+        text = (
+            f"🌐 **Bahasa Saat Ini:** {languages.get(current_lang, current_lang)}\n\n"
+            f"🔍 **Auto Detect:** {'Aktif' if auto_detect else 'Mati'}\n\n"
+            f"Gunakan /language untuk mengubah bahasa."
+        )
+        
+        await message.reply(text)
+    except Exception as e:
+        logger.error(f"Error in my_language: {e}")
+        await message.reply(f"⚠️ Terjadi kesalahan: {e}")
