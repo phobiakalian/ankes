@@ -1,70 +1,32 @@
 ```
-# Python
+# Database files
+*.sqlite3
+
+# Session files
+yn/*.session
+
+# Dependencies
+venv/
+.venv/
 __pycache__/
 *.pyc
-*.pyo
-*.pyd
-.Python
-env/
-venv/
-.venv/
-.ENV
-.ENV.*
-pip-log.txt
-pip-delete-this-directory.txt
-.tox/
-.coverage
-.coverage.*
-.cache
-nosetests.xml
-coverage.xml
-*.cover
-*.log
-.git/modules/
-.DS_Store
-Thumbs.db
-
-# Virtual Environment
-.venv/
-venv/
-ENV/
-
-# IDE
-.vscode/
-.idea/
-*.swp
-*.swo
-
-# Distribution / packaging
-.Python
-build/
-develop-eggs/
-dist/
-downloads/
-eggs/
-.eggs/
-lib/
-lib64/
-parts/
-sdist/
-var/
-wheels/
-*.egg-info/
-.installed.cfg
-*.egg
-
-# Testing
 .pytest_cache/
 .mypy_cache/
-.hypothesis/
 
-# Local configuration
+# Logs and temp files
+*.log
+*.tmp
+
+# Environment
 .env
 .env.local
-*.env
 *.env.*
 
-# Coverage
-coverage/
-htmlcov/
+# Editors
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
 ```

@@ -5,8 +5,11 @@ Allows admins to save and retrieve important messages (rules, FAQ, group info).
 
 from pyrogram import Client, filters
 from pyrogram.types import Message, InlineKeyboardMarkup, InlineKeyboardButton
-from typing import Optional
+from typing import Optional, Dict, Any, List
 import logging
+import json
+import sqlite3
+import threading
 
 from yn.utils.db import db
 from yn.plugins.i18n.translations import get_text, DEFAULT_LANGUAGE
@@ -14,16 +17,41 @@ from yn.utils.utils import admin_check
 
 logger = logging.getLogger(__name__)
 
+# Separate SQLite connection for notes (since YnDB doesn't support direct SQL)
+NOTES_DB_FILE = "ankesnotes.sqlite3"
+_notes_lock = threading.Lock()
+
+def _get_notes_connection() -> sqlite3.Connection:
+    """Get a notes database connection."""
+    return sqlite3.connect(NOTES_DB_FILE, check_same_thread=False)
+
+def init_notes_db():
+    """Initialize notes database table."""
+    with _notes_lock:
+        conn = _get_notes_connection()
+        cursor = conn.cursor()
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS notes (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                chat_id INTEGER NOT NULL,
+                note_name TEXT NOT NULL,
+                content TEXT NOT NULL,
+                content_type TEXT DEFAULT 'text',
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                UNIQUE(chat_id, note_name)
+            )
+        """)
+        conn.commit()
+        conn.close()
 
 def get_chat_language(chat_id: int) -> str:
     """Get language for a chat."""
     try:
-        cursor = db.execute(
-            "SELECT language_code FROM chat_languages WHERE chat_id = ?",
-            (chat_id,)
-        )
-        result = cursor.fetchone()
-        return result[0] if result else DEFAULT_LANGUAGE
+        # Use the existing db instance for settings
+        results = db.find({"chat_id": chat_id})
+        if results:
+            return results[0].get("language_code", DEFAULT_LANGUAGE)
+        return DEFAULT_LANGUAGE
     except Exception:
         return DEFAULT_LANGUAGE
 
@@ -98,11 +126,15 @@ async def save_note(client: Client, message: Message):
     
     # Save to database
     try:
-        db.execute("""
-            INSERT OR REPLACE INTO notes (chat_id, note_name, content, content_type, created_at)
-            VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP)
-        """, (message.chat.id, note_name, content, content_type))
-        db.commit()
+        with _notes_lock:
+            conn = _get_notes_connection()
+            cursor = conn.cursor()
+            cursor.execute("""
+                INSERT OR REPLACE INTO notes (chat_id, note_name, content, content_type, created_at)
+                VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP)
+            """, (message.chat.id, note_name, content, content_type))
+            conn.commit()
+            conn.close()
         
         await message.reply(
             get_text(lang, "success") + " " +
@@ -136,29 +168,32 @@ async def get_note(client: Client, message: Message):
     
     # Retrieve note from database
     try:
-        cursor = db.execute(
-            "SELECT content, content_type FROM notes WHERE chat_id = ? AND note_name = ?",
-            (message.chat.id, note_name)
-        )
-        result = cursor.fetchone()
-        
-        if not result:
-            await message.reply(get_text(lang, "note_not_found", name=note_name))
-            return
-        
-        content, content_type = result
-        
-        # Send the note based on content type
-        if content_type == "photo":
-            await message.reply_photo(photo=content)
-        elif content_type == "document":
-            await message.reply_document(document=content)
-        elif content_type == "video":
-            await message.reply_video(video=content)
-        elif content_type == "sticker":
-            await message.reply_sticker(sticker=content)
-        else:
-            await message.reply(content)
+        with _notes_lock:
+            conn = _get_notes_connection()
+            cursor = conn.cursor()
+            cursor.execute(
+                "SELECT content, content_type FROM notes WHERE chat_id = ? AND note_name = ?",
+                (message.chat.id, note_name)
+            )
+            result = cursor.fetchone()
+            
+            if not result:
+                await message.reply(get_text(lang, "note_not_found", name=note_name))
+                return
+            
+            content, content_type = result
+            
+            # Send the note based on content type
+            if content_type == "photo":
+                await message.reply_photo(photo=content)
+            elif content_type == "document":
+                await message.reply_document(document=content)
+            elif content_type == "video":
+                await message.reply_video(video=content)
+            elif content_type == "sticker":
+                await message.reply_sticker(sticker=content)
+            else:
+                await message.reply(content)
     except Exception as e:
         logger.error(f"Error getting note: {e}")
         await message.reply(get_text(lang, "error") + " Gagal mengambil catatan.")
@@ -172,11 +207,14 @@ async def list_notes(client: Client, message: Message):
     lang = get_chat_language(message.chat.id)
     
     try:
-        cursor = db.execute(
-            "SELECT note_name FROM notes WHERE chat_id = ? ORDER BY note_name",
-            (message.chat.id,)
-        )
-        notes = cursor.fetchall()
+        with _notes_lock:
+            conn = _get_notes_connection()
+            cursor = conn.cursor()
+            cursor.execute(
+                "SELECT note_name FROM notes WHERE chat_id = ? ORDER BY note_name",
+                (message.chat.id,)
+            )
+            notes = cursor.fetchall()
         
         if not notes:
             await message.reply(get_text(lang, "note_list_empty"))
@@ -273,18 +311,22 @@ async def hashtag_note(client: Client, message: Message):
 
 def init_notes_db():
     """Initialize notes database table."""
-    db.execute("""
-        CREATE TABLE IF NOT EXISTS notes (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            chat_id INTEGER NOT NULL,
-            note_name TEXT NOT NULL,
-            content TEXT NOT NULL,
-            content_type TEXT DEFAULT 'text',
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            UNIQUE(chat_id, note_name)
-        )
-    """)
-    db.commit()
+    with _notes_lock:
+        conn = _get_notes_connection()
+        cursor = conn.cursor()
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS notes (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                chat_id INTEGER NOT NULL,
+                note_name TEXT NOT NULL,
+                content TEXT NOT NULL,
+                content_type TEXT DEFAULT 'text',
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                UNIQUE(chat_id, note_name)
+            )
+        """)
+        conn.commit()
+        conn.close()
 
 
 # Initialize database on module load
