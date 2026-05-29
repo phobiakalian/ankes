@@ -1,55 +1,71 @@
+"""Yn Security Bot - Telegram Client Module."""
+
 import logging
 import time
+from typing import Final
 
-import hydrogram
-from hydrogram import Client
-from hydrogram.enums import ParseMode
-from hydrogram.errors import BadRequest
-from hydrogram.raw.all import layer
+import pyrogram
+from pyrogram import Client
+from pyrogram.enums import ParseMode
+from pyrogram.errors import BadRequest
+from pyrogram.raw.all import layer
+
 from yn.config import API_HASH, API_ID, DISABLED_PLUGINS, LOG_CHAT, TOKEN, WORKERS
+from yn import __commit__, __version_number__
 
-from . import __commit__, __version_number__
+logger: Final = logging.getLogger(__name__)
 
-logger = logging.getLogger(__name__)
 
 class Yn(Client):
-    def __init__(self):
-        name = self.__class__.__name__.lower()
+    """Yn Security Bot - Telegram Group Management Bot."""
+
+    def __init__(self) -> None:
+        """Initialize the Yn bot client."""
+        name: str = self.__class__.__name__.lower()
 
         super().__init__(
             name=name,
             app_version=f"Yn | Ankes r{__version_number__} ({__commit__})",
             api_id=API_ID,
             api_hash=API_HASH,
-            bot_token="7579188265:AAF0SA0wk1GWwRPF4ukm8caK9Z3TtIJF4L4",
+            bot_token=TOKEN,
             parse_mode=ParseMode.HTML,
             workers=WORKERS,
             plugins={"root": "yn.plugins", "exclude": DISABLED_PLUGINS},
             sleep_threshold=180,
         )
 
-    async def start(self):
+    async def start(self) -> None:
+        """Start the bot client."""
         await super().start()
 
-        self.start_time = time.time()
+        self.start_time: float = time.time()
 
         logger.info(
-            "Yn running with Hydrogram v%s (Layer %s) started on @%s. Hi!",
-            hydrogram.__version__,
+            "Yn running with Pyrogram v%s (Layer %s) started on @%s. Hi!",
+            pyrogram.__version__,
             layer,
             self.me.username,
         )
-        start_message = (
+        start_message: str = (
             "<b>Yn | Ankes started!</b>\n\n"
             f"<b>Version number:</b> <code>r{__version_number__} ({__commit__})</code>\n"
-            f"<b>Hydrogram:</b> <code>v{hydrogram.__version__}</code>"
+            f"<b>Pyrogram:</b> <code>v{pyrogram.__version__}</code>"
         )
 
-        try:
-            await self.send_message(chat_id=LOG_CHAT, text=start_message)
-        except BadRequest:
-            logger.warning("Unable to send message to LOG_CHAT.")
+        if LOG_CHAT:
+            try:
+                await self.send_message(chat_id=LOG_CHAT, text=start_message)
+                logger.info(f"Start message sent to LOG_CHAT ({LOG_CHAT})")
+            except Exception as e:
+                logger.warning(
+                    f"Gagal mengirim pesan ke LOG_CHAT ({LOG_CHAT}). "
+                    f"Pastikan bot sudah join grup/channel tersebut dan dijadikan admin (jika channel). "
+                    f"Error: {e}"
+                )
+                logger.info("Bot tetap berjalan tanpa log chat.")
 
-    async def stop(self):
+    async def stop(self) -> None:
+        """Stop the bot client."""
         await super().stop()
         logger.warning("Yn stopped. Bye!")

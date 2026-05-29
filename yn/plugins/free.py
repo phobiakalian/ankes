@@ -1,5 +1,5 @@
-from hydrogram import Client, filters
-from hydrogram.types import Message
+from pyrogram import Client, filters
+from pyrogram.types import Message
 from yn.utils.utils import is_admin
 from yn.utils.settings import get_group_settings
 from yn.utils import add_free_user, remove_free_user
